@@ -1,0 +1,17 @@
+{
+  "name": "reflaxe.Golang",
+  "version": "0.0.1",
+  "description": "A custom Haxe target for Golang",
+  "url": "http://example.com",
+  "tags": [],
+  "dependencies": {
+    "reflaxe": "git:https://github.com/SomeRanDev/reflaxe"
+  },
+  "classPath": "src/",
+  "releasenote": "Initial release.",
+  "reflaxe": {
+    "name": "Golang",
+    "abbv": "go",
+    "stdPaths": ["std", "std/go/_std"]
+  }
+}

@@ -1,0 +1,4 @@
+-D go
+-D Golang
+--macro nullSafety("gocompiler")
+--macro gocompiler.CompilerInit.Start()

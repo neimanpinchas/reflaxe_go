@@ -1,0 +1,412 @@
+package gocompiler;
+
+
+// Make sure this code only exists at compile-time.
+import haxe.io.Path;
+import gocompiler.Util.anon_name;
+import gocompiler.Util.is_multi_return;
+import gocompiler.TypeNamer.proper_name;
+import haxe.macro.Expr.Case;
+import reflaxe.helpers.NullableMetaAccessHelper;
+import reflaxe.helpers.NameMetaHelper;
+import haxe.macro.Expr.ImportExpr;
+import haxe.macro.TypedExprTools;
+import haxe.macro.ExprTools;
+import sys.io.File;
+import haxe.Json;
+import reflaxe.compiler.TargetCodeInjection;
+import reflaxe.output.DataAndFileInfo;
+import gocompiler.Types.UsePointer;
+
+using StringTools;
+
+#if (macro || go_runtime)
+// Import relevant Haxe macro types.
+import haxe.macro.Type;
+// Import Reflaxe types
+import reflaxe.DirectToStringCompiler;
+import reflaxe.data.ClassFuncData;
+import reflaxe.data.ClassVarData;
+import reflaxe.data.EnumOptionData;
+import gocompiler.Compiler.CompilerConfig;
+
+using Lambda;
+
+var code_injections = new Map<String, String>();
+var imports = new Map<String, Bool>();
+var pkg='haxe_out';
+
+/**
+	The class used to compile the Haxe AST into your target language's code.
+
+	This must extend from `BaseCompiler`. `PluginCompiler<T>` is a child class
+	that provides the ability for people to make plugins for your compiler.
+**/
+
+
+class StringCompiler  {
+	public var config:CompilerConfig = try {
+		trace(Sys.getCwd());
+		Json.parse(File.getContent("./compiler_config.json"));
+	} catch (ex) {
+		trace(ex);
+		{
+			class_blacklist: []
+		};
+	};
+
+	// public override function onCompileStart() {
+	// 	config.class_blacklist.push("PosException");
+	// 	config.class_blacklist.push("NotImplementedException");
+	// 	config.class_blacklist.push("LangSyntax");
+	// 	config.class_blacklist.push("ArrayIterator");
+	// 	config.class_blacklist.push("Chan");
+	// 	config.class_blacklist.push("error");
+	// 	config.class_blacklist.push("Ptr");
+	// 	super.onCompileStart();
+	// }
+
+	public function compile_binop(e1, e2, op) {
+		var st1 = compileExpression(e1);
+		var st2 = compileExpression(e2);
+		var t1 = proper_name(e1.t);
+		var t2 = proper_name(e2.t);
+		var final_st1 = convert_to_needed_type(st1, t2, t1);
+		var final_st2 = convert_to_needed_type(st2, t1, t2);
+
+		var hack_unused=if (op=="="){
+			'\n_=$final_st1';
+		} else {
+			'';
+		}
+
+		// todo check for oposite
+		return '$final_st1$op$final_st2'+'$hack_unused';
+	}
+
+
+	public override function onCompileEnd() {
+		for (c in TypeNamer.classes){
+			classes.push(c);
+		}
+		for (c in classes){
+			if (c.data.trim().length==0){
+				classes.remove(c);
+			}
+		}
+		/*
+		classes.unshift(new DataAndFileInfo('package $pkg
+		import(
+			${{iterator:()->imports.keys()}.map(v->' "$v" ').join("\n")}
+		)
+		', current_class, null, null));
+		*/
+	}
+
+
+
+	/**
+		This is the function from the BaseCompiler to override to compile Haxe classes.
+		Given the haxe.macro.ClassType and its variables and fields, return the output String.
+		If `null` is returned, the class is ignored and nothing is compiled for it.
+
+		https://api.haxe.org/haxe/macro/ClassType.html
+	**/
+	public var current_class:ClassType;
+
+	public function compileClassImpl(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<String> {
+		// code_injections=[];
+		current_class = classType;
+		TypeNamer.current=classType;
+		TypeNamer.pkg=pkg;
+
+		// TODO: implement
+		var class_name = classType.name;
+		// trace(class_name);
+		var inj = "";
+		// var goimports=classType.meta.extract(":goimport");
+		var goimports = NullableMetaAccessHelper.extractStringFromAllMeta(classType.meta, ":goimport");
+		var add_file= NullableMetaAccessHelper.extractStringFromAllMeta(classType.meta, ":add_file");
+		if (add_file.length>0){
+			inj+=classType;
+		}
+		trace(class_name, goimports);
+		goimports.foreach((v) -> {
+			trace("adding import");
+			imports.set(v, true);
+			return true;
+		});
+
+		var generics = classType.params.length > 0 ? "[" + classType.params.map(p -> p.name + " any").join(",") + "]" : "";
+		var generics_use = classType.params.length > 0 ? "[" + classType.params.map(p -> p.name).join(",") + "]" : "";
+		var has_generics = classType.params.length > 0;
+
+		if (classType.isExtern) {
+			// todo actually do not generate code at all
+			return "";
+		}
+
+		if (config.class_blacklist.contains(classType.name)) {
+			trace("skipping", classType.name);
+			return "";
+		}
+
+		var main = compileExpressionImpl(getMainExpr(), false);
+		
+		if (main.startsWith(class_name + "_")) {
+			code_injections["main"] = '\nfunc main(){
+				$main
+			}\n';
+			inj += code_injections.array().join("\n");
+		} else {
+			// trace(class_name,main);
+		}
+		var static_fields = [];
+		var initializers = [];
+		var fields = varFields.map(f -> {
+			var ftname = proper_name(f.field.type);
+			var force_prt_on_recursive = if (ftname == class_name) {
+				"*";
+			} else {
+				"";
+			}
+			var has_init = false;
+			var init = try {
+				var expr = (f.findDefaultExpr());
+				if (expr == null) {
+					"//was unable to get expr";
+				} else if (f.hasDefaultValue()) {
+					has_init = true;
+					compileExpression(expr);
+				} else {
+					"";
+				}
+			} catch (ex) {
+				"//" + ex.toString();
+			}
+			if (f.isStatic) {
+				static_fields.push({
+					n: f.field.name,
+					t: force_prt_on_recursive + proper_name(f.field.type),
+					i: init,
+					has_init: has_init,
+				});
+				return "";
+			} else if (has_init) {
+				initializers.push("_inst." + f.field.name + "=" + init);
+			}
+			if (f.field.name == "cache") {
+				trace(f.field);
+			}
+			return f.field.name + " " + force_prt_on_recursive + proper_name(f.field.type, UsePointer.Neutral, f.field.params);
+		});
+
+		var static_fields_str = static_fields.map(f -> {
+			return 'var ${class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + f.i : "");
+		}).join("\n");
+		var methods = funcFields.map(f -> {
+			var args = f.args.map(a -> {
+				switch a.type {
+					case TEnum(t, params):
+						//t.get().name+"_"+a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
+						a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
+					case _:
+						a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
+				}
+			});
+			var ret_type=proper_name(f.ret, Neutral);
+			var ret = ret_type.length>0 ? "(out "+ret_type+")" : "";
+			if (f.kind.match(MethDynamic) && !f.isStatic) {
+				// todo setup initializer
+				fields.push(f.field.name + " func(" + args.join(",") + ")");
+				initializers.push('_inst.${f.field.name}=func(${args.join(",")}){
+					${compileExpressionImpl(f.expr, false)}
+				}');
+				return "//" + f.field.name + " is dynamic \n ";
+			}
+
+			var thisvar = '_inst * $class_name$generics_use';
+			if (has_generics && !f.isStatic && !(f.field.name == "new")) {
+				args.unshift(thisvar);
+			}
+			var local_generics=if (f.isStatic && f.field.params.length>0){
+				"["+f.field.params.map(v->v.name+" any").join(",")+"]";
+			} else {
+				generics;
+			}
+			var hdr = if (f.isStatic || f.field.name == "new" || has_generics) 'func ${class_name}_${f.field.name}$local_generics' else
+				'func ($thisvar)${f.field.name}';
+			var body = if (f.field.name == "new") {
+				'
+				${"_inst:=&"+class_name+'$generics_use{}'}
+				${initializers.length>0? '${class_name}_inst_init(_inst)':"" }
+				${compileExpressionImpl(f.expr, false)}
+				${"return _inst"}
+				';
+			} else {
+				compileExpressionImpl(f.expr, false);
+			}
+			if (classType.isInterface) {
+				return f.field.name + '(${args.join(",")})$ret';
+			}
+			return '$hdr(${args.join(",")})  ${f.field.name == "new" ? "*" + '$class_name$generics_use' : '$ret'}{
+				 $body
+			}';
+		}).join("\n");
+
+		if (classType.isInterface) {
+			return 'package $pkg
+
+			type $class_name$generics interface {
+				$methods
+			}';
+		}
+		var fields_str = fields.join("\n");
+
+		var super_str= classType.superClass!=null?"super "+(classType.superClass.t.get().name)+"\n":"";
+
+		// not when generating single file var inj=code_injections.array().join("\n");
+		return 'package $pkg\n
+			
+		$static_fields_str \n type $class_name$generics struct{$super_str $fields_str}\n $methods
+		 $inj'+if (initializers.length>0){
+		'
+		func ${class_name}_inst_init$generics(_inst * $class_name$generics_use){
+			${initializers.join("\n")}
+		}';
+	} else {
+		'';
+	}
+		;
+		return null;
+	}
+
+	/**
+		Works just like `compileClassImpl`, but for Haxe enums.
+		Since we're returning `null` here, all Haxe enums are ignored.
+
+		https://api.haxe.org/haxe/macro/EnumType.html
+	**/
+	public function compileEnumImpl(enumType:EnumType, constructs:Array<EnumOptionData>):Null<String> {
+		// TODO: implement
+		var name = enumType.name;
+		var simple = constructs.filter(v -> v.args.length == 0);
+		var simple_count = simple.length;
+		var multies = constructs.filter(v -> v.args.length > 0);
+		var gen=enumType.params.length>0?"["+enumType.params.map(v->v.name+" any").join(",")+"]":"";
+		// var body='package $pkg\n
+		var fields = new Map<String, String>();
+		var multi_str = multies.mapi((i, c) -> {
+			var mapf = (v) -> {
+				fields[v.name] = proper_name(v.type);
+				return v.name + " " + proper_name(v.type);
+			};
+			var args = c.args.map(mapf).join(",");
+			//var gen=c.field.params.map(v->v.name).join(",");
+			return 'func ${name}_${c.name}$gen($args) ${name}_obj {
+			var _e=${name}_obj{}
+			_e.__hxindex=${i + simple_count}
+			${c.args.map(v -> '_e.' + v.name + '=' + v.name).join("\n")}
+			return _e
+		}';
+		}).join("\r\n");
+		var body = '
+		package $pkg
+		type ${name}_int int
+		type ${name}$gen interface {
+			Index() int
+			Fields() ${name}_obj
+		}
+		func (e ${name}_int) Index() int {
+			return int(e);
+		}
+
+		func (e ${name}_int) Fields() ${name}_obj {
+			return ${name}_obj{__hxindex:int(e)}
+		}
+
+		func (e ${name}_obj) Index() int {
+			return int(e.__hxindex)
+		}
+
+		func (e ${name}_obj) Fields() ${name}_obj {
+			return e
+		}
+
+
+		
+		\n'
+			+ simple.mapi((i, c) -> 'const ${name}_' + c.name + ' ${name}_int = $i').join("\n")
+			+ '
+		type ${name}_obj ${name}_fields
+		$multi_str
+
+		type ${name}_fields$gen struct {
+			${{iterator:()->fields.keyValueIterator()}.map((kv)->kv.key+" "+kv.value).join("\n")}
+			__hxindex int
+		}
+		';
+		return body;
+	}
+
+	public function code(values) {
+		trace(values);
+	}
+
+	public function convert_to_needed_type(v, t_to, t_from) {
+		if (t_to == "TypedDynamic") {
+			return switch (t_from) {
+				case "string": 'TypedDynamic_fromString($v)';
+				case "int": 'TypedDynamic_fromInt($v)';
+				case _: 'TypedDynamic_fromInterface($v)';
+			}
+		}
+		/*
+		if (t_from=="interface{}"){
+			return v+'.($t_to)';
+		}
+		*/
+		return switch ([v, t_to]) {
+			case ["nil", "string"]: '""';
+			case ["nil", "int"]: '0';
+			case ["nil", "float64"]: '0';
+			case [_, _]: v;
+		}
+	}
+
+	/**
+		This is the final required function.
+		It compiles the expressions generated from Haxe.
+
+		PLEASE NOTE: to recusively compile sub-expressions:
+			BaseCompiler.compileExpression(expr: TypedExpr): Null<String>
+			BaseCompiler.compileExpressionOrError(expr: TypedExpr): String
+
+		https://api.haxe.org/haxe/macro/TypedExpr.html
+	**/
+	
+	function gen_string(arr:Array<TypeParameter>) {
+		return try if (arr!=null && arr.length>0){
+			"["+arr.map(v->v.name).join(",")+"]";
+		} else {
+			"";
+		}
+	}
+
+	function e2string_ar(e:TypedExpr):Array<String> {
+		return switch e.expr{
+			case TBinop(op, ie1, ie2):switch op {
+				case OpAdd if (proper_name(ie1.t) == "string"):return [e2string_ar(ie1),e2string_ar(ie2)].flatten();
+				case _:[compileExpression(e)];
+			}
+			case _:[compileExpression(e)];
+		}
+	}
+
+	function compile_string_concat(e1:TypedExpr, e2:TypedExpr) {
+		var parts=[e2string_ar(e1),e2string_ar(e2)].flatten();
+		return 'fmt.Sprint(' + parts.join(",") + ')';
+
+	}
+}
+#end
