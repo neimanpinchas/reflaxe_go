@@ -1,6 +1,6 @@
 # Reflaxe/Golang
 
-A compiler that compiles Haxe code into Golang. using reflaxe (link needed)
+A compiler that compiles Haxe code into Golang. using reflaxe (https://github.com/RobertBorghese/reflaxe)
 
 # Alternative name
 Once mature enough and eaisier to write then ancient golang: Go-sharp, I think the go world (at least myself) is more thirsty for additional syntax, than haxe for a better targets.
@@ -68,6 +68,7 @@ The scale is insane for compilers, so it's easy to give up before anyone would e
  Once the roadmap is complete the work will opened to the public with a common open source license such as MIT or GPL or similar based on a developer vote, and legal options.
 
  # Credits
- reflaxe project
+ reflaxe project https://github.com/RobertBorghese/reflaxe
+ 
  Pinchas Neiman (go taget)
  
