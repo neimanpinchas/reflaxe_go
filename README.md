@@ -66,3 +66,4 @@ Offer early commercial users the ability to advance the roadmap by contributing 
 ## Credits
 - [Reflaxe Project](https://github.com/RobertBorghese/reflaxe)
 - Pinchas Neiman (Go Target)
+- Great Commentors in prototype project https://github.com/neimanpinchas/haxego/issues/3
