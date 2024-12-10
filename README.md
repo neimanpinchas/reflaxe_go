@@ -18,12 +18,13 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - Real Readable Output
 
 ## How to Use
-1. Clone the repository using `haxelib`, or download locally and use with `haxelib/lix dev`.
-2. Add a reference to the library: `-L reflaxe_go`.
-3. Update the path to `go_imports.exe` in `Generator.hx`.
-4. Add `-D go-output haxe_out` (or any subfolder you like).
+1. Ensure go 1.20 is installed (1.18 for generics, 1.20 for random generator)
+2. Clone the repository using `haxelib`, or download locally and use with `haxelib/lix dev`.
+3. Add a reference to the library: `-L reflaxe_go`.
+4. Update the path to `go_imports.exe` in `Generator.hx`.
+5. Add `-D go-output haxe_out` (or any subfolder you like).
    - Note: Currently, it will not generate a Go main function. You must create a `main.go` in your Haxe root directory and call the necessary main function.
-5. Run `haxe your.hxml`.
+6. Run `haxe your.hxml`.
 
 ## Why Haxe+Golang > Golang
 - Real Generics (Array Methods)
@@ -49,6 +50,11 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - [ ] Support Enums Reusing Same Parameter Name with Other Types
 - [ ] Make Easier to Use (Update Documentation, Automatic Installation of `go_imports`, Automatic Main Creation, Use Defines for Package Name)
 - [ ] Build a Beginner-Friendly Website for Golang Experts
+- [ ] Implement full non sys std
+- [ ] Implement full full sys.io.Fil and sys.FileSystem
+- [ ] Implement full sys.net
+- [ ] Implement full sys.db
+- [ ] Implement full sys
 
 ## Minor Bugs
 - [ ] `smartDCE` Removes the Timer Class Even When Used
