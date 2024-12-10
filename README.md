@@ -62,6 +62,8 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 ## License
 CC-BY-NC-ND
 
+Creative Commons, Not commercial use, Must Attribute, ND
+
 ## Why
 ### Problem
 Creating a successful compiler project is challenging due to the need for stability and widespread adoption. The complexity often leads to abandonment before reaching a usable state.
