@@ -5,7 +5,7 @@ A compiler that compiles Haxe code into Golang. using reflaxe (link needed)
 # Alternative name
 Once mature enough and eaisier to write then ancient golang: Go-sharp, I think the go world (at least myself) is more thirsty for additional syntax, than haxe for a better targets.
 
-## Why GoLang targer
+## Why GoLang target
 * Great Performance vs GC Balance
 * Great Solid Tooling
 * Faster compilation then CPP
@@ -66,4 +66,8 @@ The scale is insane for compilers, so it's easy to give up before anyone would e
  Every proposeal for a new milestone can be voted by all current developers
  resolving 10 issues count as  a milstone.
  Once the roadmap is complete the work will opened to the public with a common open source license such as MIT or GPL or similar based on a developer vote, and legal options.
+
+ # Credits
+ reflaxe project
+ Pinchas Neiman (go taget)
  
