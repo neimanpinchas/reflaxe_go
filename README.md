@@ -38,7 +38,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - Enums: ADT
 - Dynamic Methods
 - Struct Field Initializers
-- Derivations
+## Derivations
 - Support Class Blacklist via Config File
 - Allow Explicit `goimports` via Meta
 - `Json.parse` is Generic, Not Dynamic (Type Inferences)
