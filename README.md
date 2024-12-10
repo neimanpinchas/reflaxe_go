@@ -1,74 +1,68 @@
 # Reflaxe/Golang
 
-A compiler that compiles Haxe code into Golang. using reflaxe (https://github.com/RobertBorghese/reflaxe)
+A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.com/RobertBorghese/reflaxe).
 
-# Alternative name
-Once mature enough and eaisier to write then ancient golang: Go-sharp, I think the go world (at least myself) is more thirsty for additional syntax, than haxe for a better targets.
+## Alternative Name
+- **Go-sharp**: Once mature enough and easier to write than ancient Golang.
 
-## Why GoLang target
-* Great Performance vs GC Balance
-* Great Solid Tooling
-* Faster compilation then CPP
-* Truly cross platform (win, lin, bsd, wasm, avr, ++)
-* Bunch of backend libraries
-* Together with go2hx, we could work with both together.
-* Static binaries easy portable between distributions as long as the hardware match
-* GO routines, allowing to stay with haxe sync nature instead of waiting for asys.
-* Hi speed web frameworks
-* Real readable output
+## Why Target GoLang?
+- Great Performance vs. GC Balance
+- Excellent Solid Tooling
+- Faster Compilation than C++
+- Truly Cross-Platform (Windows, Linux, BSD, WASM, AVR, etc.)
+- Numerous Backend Libraries
+- Collaboration with `go2hx`
+- Static Binaries Easily Portable Between Distributions (Hardware Match Needed)
+- Go Routines (Supports Haxe's Sync Nature)
+- High-Speed Web Frameworks
+- Real Readable Output
 
-# How to use
-* clone repo using haxelib, or download locally and use with haxelib/lix dev.
-* add reference to library `-L reflaxe_go`
-* Update the path to go_imports.exe in Generator.hx
-* add `-D go-output haxe_out` Or whatever subfolder you like, currently it will not generate a go main function, and you must create a main.go in you haxe root directory, and call watever main function needed.
-* run haxe your.hxml
+## How to Use
+1. Clone the repository using `haxelib`, or download locally and use with `haxelib/lix dev`.
+2. Add a reference to the library: `-L reflaxe_go`.
+3. Update the path to `go_imports.exe` in `Generator.hx`.
+4. Add `-D go-output haxe_out` (or any subfolder you like).
+   - Note: Currently, it will not generate a Go main function. You must create a `main.go` in your Haxe root directory and call the necessary main function.
+5. Run `haxe your.hxml`.
 
-## Why Haxe+Golang > Golang (|| why haxe!=0 even in presence of Golang)
-* Real generics (Array methods)
-* String interpolation
-* Everything is an expression
-* Static extensions
-* Real Dynamics (when needed)
-* Pattern Matching
-* We all know EcmaScript (torough JavaScript).
-* Slim client side code sharing (vs gopher/wasm).
-* Enums: ADT
-* Dynamic methods
-* Struct field initializers
-
-## Deriviations
-* support class blacklist via config file
-* allow explicit goimports via meta
-* Json.parse is generic not dynamic (not bad with type infersions all the way)
-* supporting muti return like lua
+## Why Haxe+Golang > Golang
+- Real Generics (Array Methods)
+- String Interpolation
+- Everything is an Expression
+- Static Extensions
+- Real Dynamics (When Needed)
+- Pattern Matching
+- Familiarity with EcmaScript (through JavaScript)
+- Slim Client-Side Code Sharing (vs. Gopher/WASM)
+- Enums: ADT
+- Dynamic Methods
+- Struct Field Initializers
+- Derivations
+- Support Class Blacklist via Config File
+- Allow Explicit `goimports` via Meta
+- `Json.parse` is Generic, Not Dynamic (Type Inferences)
+- Supporting Multi-Return Like Lua
 
 ## Roadmap
-[ ] Full reflection support record-macros and typed Json
-[ ] Full port of networking library
-[ ] Support enums reusing same parameter name with other types
-[ ] Make easier to use, update doumentation, automatic installation of go_imports, automatic main creation, use defines for package name.
-[ ] Build a beginner (golang expert) website for it to make it easy for beginners to use.
+- [ ] Full Reflection Support (Record-Macros and Typed JSON)
+- [ ] Full Port of Networking Library
+- [ ] Support Enums Reusing Same Parameter Name with Other Types
+- [ ] Make Easier to Use (Update Documentation, Automatic Installation of `go_imports`, Automatic Main Creation, Use Defines for Package Name)
+- [ ] Build a Beginner-Friendly Website for Golang Experts
 
-## Minor bugs
-[ ] smartDCE removes the Timer class even when used.
+## Minor Bugs
+- [ ] `smartDCE` Removes the Timer Class Even When Used
 
-
-# License
+## License
 CC-BY-NC-ND
+
 ## Why
 ### Problem
-It is very hard to get a sucessful project when it comes to a compiler, to make a project successfull you need to get lots of people using it and sticking with it, compilers need to be very stable for people to stick with it, and that's incredibly hard when you are still working on it.
-The scale is insane for compilers, so it's easy to give up before anyone would even think of using it, and that's a really shame but it is a risk taken for such a huge undertaking.
- ### Solution
- I want to try a solution by giving the first few commerical users the ability to advance the roadmap by commiting code or donating, and in exchange hardstamp their names and corperations in the project front page for generations, Also the plan is to give binary exponantial leverage to earlier contributers, for example the pair of developer who will finish the first milstone will get their name in font size 64pt, next 4 will get 32pt, next 8 will get 16pt etc.
- Also all of these developers will get a commercial but non-distirbuting usage license (go code compiled by the compiler may be shared, also he may obviously share it with the creative commons terms)
- Every proposeal for a new milestone can be voted by all current developers
- resolving 10 issues count as  a milstone.
- Once the roadmap is complete the work will opened to the public with a common open source license such as MIT or GPL or similar based on a developer vote, and legal options.
+Creating a successful compiler project is challenging due to the need for stability and widespread adoption. The complexity often leads to abandonment before reaching a usable state.
 
- # Credits
- reflaxe project https://github.com/RobertBorghese/reflaxe
- 
- Pinchas Neiman (go taget)
- 
+### Solution
+Offer early commercial users the ability to advance the roadmap by contributing code or donations. In exchange, feature their names and corporations prominently on the project front page for future generations. Provide binary exponential leverage to early contributors (e.g., the first milestone finishers' names in 64pt font, the next in 32pt, etc.). Developers receive a commercial non-distributing usage license. Proposals for new milestones can be voted on by all current developers, and resolving 10 issues counts as a milestone. Once complete, the work will be released under a common open-source license (MIT, GPL, or similar) based on a developer vote and legal options.
+
+## Credits
+- [Reflaxe Project](https://github.com/RobertBorghese/reflaxe)
+- Pinchas Neiman (Go Target)
