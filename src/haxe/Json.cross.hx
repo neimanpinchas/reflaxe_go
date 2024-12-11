@@ -1,7 +1,7 @@
 package haxe;
 class Json {
     
-    public static function parse(s:String):Dynamic {
+    public static function parse<T>(s:String):T {
         return gostd.Json.Parse(s);
     }
     

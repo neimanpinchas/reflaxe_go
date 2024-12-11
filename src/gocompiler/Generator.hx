@@ -126,7 +126,7 @@ function generateMethod(c:AST.Class, f:Func, isStatic) {
 	}
 	return '$hdr(${f.p.map(v -> v.n + " " + v.t).join(",")})  ${f.n == "new" ? "*" + '$class_name$generics_use' : '$ret'}{
 		 $body
-	}';
+	} /* ${f.g} */';
 }
 
 /**

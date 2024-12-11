@@ -7,10 +7,10 @@ extern class Json {
         return untyped __go__("string({0})",b_arr);
     }
     
-    inline static function Parse(s:String):Dynamic {
+    inline static function Parse<T>(s:String):T {
         //TODO handle error normally
-        var o:Dynamic=null;
-        untyped __go__("var o interface{}");
+        var o:T=null;
+        //untyped __go__("var o interface{}");
         var err = untyped __go__("json.Unmarshal([]byte(s),&{0})",o);
         return o;
     }
