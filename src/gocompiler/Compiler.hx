@@ -333,6 +333,9 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		https://api.haxe.org/haxe/macro/TypedExpr.html
 	**/
 	public function compileExpressionImpl(expr:TypedExpr, topLevel:Bool):Null<AST.Expr> {
+		if (expr==null){
+			return StringInject("/* expr was null */");
+		}
 		return switch (expr.expr) {
 			//these are not currently used but the one below in the string compiler
 			// Here's a very basic example of converting `untyped __go__("something")` into source code...
