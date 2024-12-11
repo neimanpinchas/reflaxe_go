@@ -22,7 +22,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 2. Clone the repository using `haxelib`, or download locally and use with `haxelib/lix dev`.
 3. Add a reference to the library: `-L reflaxe_go`.
 4. Update the path to `go_imports.exe` in `Generator.hx`.
-5. Add `-D go-output haxe_out` (or any subfolder you like).
+5. Add `-D go-output=haxe_out` (or any subfolder you like).
    - Note: Currently, it will not generate a Go main function. You must create a `main.go` in your Haxe root directory and call the necessary main function.
 6. Run `haxe your.hxml`.
 
