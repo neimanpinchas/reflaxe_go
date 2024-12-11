@@ -1,16 +1,28 @@
 package gocompiler;
 
+import haxe.macro.Compiler;
+import haxe.macro.Context;
 import sys.io.Process;
 import gocompiler.AST.Func;
-import haxe.macro.Compiler;
+#if macro
+import haxe.macro.Compiler as HaxeCompiler;
+#end
 import gocompiler.TypeNamer.proper_name;
 import gocompiler.Types.UsePointer;
 using StringTools;
 
 using Lambda;
 
+function get_define(n:String):Null<String>{
+#if macro
+	return Context.definedValue(n);
+#else 
+	return "";//Compiler.getDefine(n);
+#end
+}
 #if (macro || go_runtime)
-var pkg = "haxe_out"; // Compiler.getDefine("pkg") ?? "haxe_out";
+var pkg = get_define("pkg") ?? "haxe_out";
+var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
 
 /**
 	Used to generate Golang class source code from your intermediate data.
@@ -66,7 +78,7 @@ function generateClass(c:AST.Class):Null<String> {
 }
 
 function format(full_text) {
-	var p=new Process("C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe");
+	var p=new Process(goimports);
 		p.stdin.writeString(full_text);
 		p.stdin.close();
 		var real=p.stdout.readAll();
