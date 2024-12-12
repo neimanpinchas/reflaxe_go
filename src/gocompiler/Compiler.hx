@@ -443,26 +443,17 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 							}
 						case _:
 					}
-					var cf=e.getClassField();
-					final tfunc = if(cf != null) switch(cf.expr()?.expr) {
-						case TFunction(tfunc): tfunc;
-						case _: null;
-					} else null;
+
 
 					var gen=e.getFunctionTypeParams().map(v->proper_name(v,Neutral));
 					var gen_string=gen.length>0 ? "["+gen.join(",")+"]":"";
 					
 					
 
-					// for (arg in tfunc.args){
-					// 	arg.v.meta.
-					// }
-					var generics=cf.params;
 
-					var meta=e.hasMeta(":gen");
 					
 
-					fname + gen_string+ "(" + args.join(",") + ")/*"+meta+"*/";
+					fname + gen_string+ "(" + args.join(",") + ")";
 				case TField(e, fa): {
 						return switch fa {
 							case FInstance(cl, par, cf): {
