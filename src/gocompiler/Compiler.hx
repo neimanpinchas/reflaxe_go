@@ -13,6 +13,9 @@ import reflaxe.helpers.NameMetaHelper;
 import gocompiler.Types.UsePointer;
 import haxe.macro.TypedExprTools;
 using StringTools;
+using reflaxe.helpers.TypedExprHelper;
+using reflaxe.helpers.ClassFieldHelper;
+using reflaxe.helpers.TypeHelper;
 
 
 // Make sure this code only exists at compile-time.
@@ -440,8 +443,26 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 							}
 						case _:
 					}
+					var cf=e.getClassField();
+					final tfunc = if(cf != null) switch(cf.expr()?.expr) {
+						case TFunction(tfunc): tfunc;
+						case _: null;
+					} else null;
 
-					fname + "(" + args.join(",") + ")";
+					var gen=e.getFunctionTypeParams().map(v->proper_name(v,Neutral));
+					var gen_string=gen.length>0 ? "["+gen.join(",")+"]":"";
+					
+					
+
+					// for (arg in tfunc.args){
+					// 	arg.v.meta.
+					// }
+					var generics=cf.params;
+
+					var meta=e.hasMeta(":gen");
+					
+
+					fname + gen_string+ "(" + args.join(",") + ")/*"+meta+"*/";
 				case TField(e, fa): {
 						return switch fa {
 							case FInstance(cl, par, cf): {
