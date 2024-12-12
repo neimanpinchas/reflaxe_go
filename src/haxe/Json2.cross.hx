@@ -1,5 +1,6 @@
 package haxe;
-class Json<T> {
+@:generic
+class Json2<T> {
     
     public static function parse<T>(s:String):T {
         return gostd.Json.Parse(s);

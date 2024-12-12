@@ -10,7 +10,7 @@ extern class Json {
     inline static function Parse<T>(s:String):T {
         //TODO handle error normally
         var o:T=null;
-        //untyped __go__("var o interface{}");
+        untyped __go__("var o T");
         var err = untyped __go__("json.Unmarshal([]byte(s),&{0})",o);
         return o;
     }
