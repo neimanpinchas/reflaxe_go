@@ -4,6 +4,7 @@ import haxe.macro.Compiler;
 import haxe.macro.Context;
 import sys.io.Process;
 import gocompiler.AST.Func;
+import haxe.Json;
 #if macro
 import haxe.macro.Compiler as HaxeCompiler;
 #end
@@ -37,7 +38,7 @@ function generateClass(c:AST.Class):Null<String> {
 		}
 		return f.n + " " + force_prt_on_recursive + f.t;
 	}).join("\n");
-	var static_fields_str = c.static_vars.map(f -> {
+	var static_vars_str = c.static_vars.map(f -> {
 		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + f.i : "");
 	}).join("\n");
 	// initializers.push("_inst." + f.field.name + "=" + init);
@@ -56,7 +57,7 @@ function generateClass(c:AST.Class):Null<String> {
 	var inj = "";
 
 	var full_text = 'package $pkg\n
-			
+			$static_vars_str
 	$static_fields_str \n type ${c.class_name}$generics struct{$super_str $fields_str}\n $methods
 	 $inj'
 		+ if (c.initializers.length > 0) {
@@ -68,8 +69,10 @@ function generateClass(c:AST.Class):Null<String> {
 	}
 		
 	$methods
-
-	$static_fields_str
+	/**
+	 ${Json.stringify(c)}
+	 * /
+	 */
 	';
 		} else {
 			'';
