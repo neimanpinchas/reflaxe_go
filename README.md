@@ -42,7 +42,8 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 ## Derivations
 - Support Class Blacklist via Config File
 - Allow Explicit `goimports` via Meta
-- `Json.parse` is Generic, Not Dynamic (Type Inferences)
+- `Json.parse` is Generic, Not Dynamic (Type Inferences) Currently there is aseperate class haxe.Json2, you can use it as `import haxe.Json2 as Json`
+- Lang.go(()->{}) `to call as go routine`
 - Supporting Multi-Return Like Lua
 
 ## Roadmap
