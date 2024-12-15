@@ -225,22 +225,25 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			func.r=ret_type;
 			var ret=ret_type;
 
+			if (f.kind.match(MethDynamic) && !f.isStatic) {
+				// todo setup initializer
+				var arg_str=args.map(v->v.t).join(",");
+				var init=StringInject('_inst.${f.field.name}=func(${arg_str}){
+					${compileExpressionImpl(f.expr, false)}
+				}');
+				fields.push({n:f.field.name ,t: " func(" + arg_str + ")",i:init});
+				initializers.push(init);
+				continue;
+				// "//" + f.field.name + " is dynamic \n ";
+			}
+
 			if (f.isStatic){
 				out.static_funcs.push(func);
 			} else {
 				out.funcs.push(func);
 			}
 			
-			if (f.kind.match(MethDynamic) && !f.isStatic) {
-				// todo setup initializer
-				var init=StringInject('_inst.${f.field.name}=func(${args.join(",")}){
-					${compileExpressionImpl(f.expr, false)}
-				}');
-				fields.push({n:f.field.name ,t: " func(" + args.join(",") + ")",i:init});
-				initializers.push(init);
-				return null;
-				// "//" + f.field.name + " is dynamic \n ";
-			}
+
 
 			//return out;
 
@@ -249,7 +252,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		var fields_str = fields.join("\n");
 
 		var super_str = classType.superClass != null ? "super " + (classType.superClass.t.get().name) + "\n" : "";
-
+		trace("finished",class_name, goimports);
 		return out;
 	}
 
@@ -387,7 +390,6 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 
 				case TCall(e, el):
 					var fname = compileExpressionToString(e);
-					trace(fname);
 					// if (fname=="Log_trace") trace(e,el);
 					if (fname == "Syntax.code") {
 						var format = compileExpressionToString(el[0]);
@@ -445,8 +447,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					}
 
 
-					var gen=e.getFunctionTypeParams().map(v->proper_name(v,Neutral));
-					var gen_string=gen.length>0 ? "["+gen.join(",")+"]":"";
+					var gen=e?.getFunctionTypeParams()?.map(v->try proper_name(v,Neutral) catch(ex) '/*$ex*/interface{}');
+					var gen_string=gen!=null && gen.length>0 ? "["+gen.join(",")+"]":"";
 					
 					
 

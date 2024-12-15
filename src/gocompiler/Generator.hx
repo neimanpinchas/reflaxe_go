@@ -29,7 +29,7 @@ var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/test
 	Used to generate Golang class source code from your intermediate data.
 **/
 function generateClass(c:AST.Class):Null<String> {
-	trace(c);
+	trace(c.class_name);
 	var force_prt_on_recursive = ""; // TODO no idea what this is for
 	var fields_str = c.vars.map(f -> {
 		if (f == null) {
