@@ -42,6 +42,10 @@ class LangSyntax {
 
 
 @:multiReturn class Duet<T1,T2> {
+    public function new() {
+        //db=_db;
+        //err=_err;
+    }
     public var db:T1;
     public var err:T2;
 }

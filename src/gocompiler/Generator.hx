@@ -39,7 +39,11 @@ function generateClass(c:AST.Class):Null<String> {
 		return f.n + " " + force_prt_on_recursive + f.t;
 	}).join("\n");
 	var static_vars_str = c.static_vars.map(f -> {
-		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + f.i : "");
+		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + switch f.i{
+			case Nothing:"//noinit";
+			case StringInject(code):code;
+			case _:"//noinit";
+		} : "");
 	}).join("\n");
 	// initializers.push("_inst." + f.field.name + "=" + init);
 	//

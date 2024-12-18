@@ -10,7 +10,7 @@ class Tuple2<@:nonptr T1,@:nonptr T2> {
     public var a:T1;
     public var b:T2;
     public static function multi_return<T1,T2>(_a:T1,_b:T2):Tuple2<T1,T2>{
-        var out=@:generics("T1,T2") new Tuple2();
+        var out=@:generics("T1,T2") new Tuple2(_a,_b);
         out.a=_a;
         out.b=_b;
         return out;

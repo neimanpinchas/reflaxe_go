@@ -161,6 +161,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		}
 		var static_fields = [];
 		var initializers = [];
+		var class_init=compileExpression(classType.init);
 		var fields = varFields.map(f -> {
 			var ftname = proper_name(f.field.type);
 			var force_prt_on_recursive = if (ftname == class_name) {
@@ -244,8 +245,18 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 				out.funcs.push(func);
 			}
 
+			
+
 			//return out;
 		};
+
+		out.static_funcs.push({
+			n: "__init__",
+			g: [],
+			b: class_init,
+			r: "",
+			p:[],
+		});
 
 		var fields_str = fields.join("\n");
 
@@ -407,25 +418,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						case _: [];
 					}
 
-					var expected_args = expected_args_array.map(a -> proper_name(a.t));
+					var args=fill_args(el,expected_args_array);
 
-					var i = 0;
-
-					var args = el.map(a -> {
-						var v = compileExpressionToString(a, false);
-						var needed_type = expected_args[i++];
-						var value_type = proper_name(a.t);
-						return convert_to_needed_type(compileExpressionToString(a, false), needed_type, value_type);
-					});
-
-					var index=args.length;
-
-					if (expected_args.length>args.length){
-						for (i in index...expected_args.length){
-							//todo this is not good, we need to get the actual default value
-							expected_args_array[i].opt?args.push(convert_to_needed_type("nil",proper_name(expected_args_array[i].t),null)):"";
-						}
-					}
 
 					switch e.expr {
 						case TField(e2, fa): {
@@ -573,12 +567,14 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 							return compileStringWithArgs(s,null,[null].concat(el));
 						}
 						//trace(c.get().name,c.get().fields.get());
-						var p = el.map(v -> compileExpressionToString(v)).join(",");
+						var expected_args=constructor.type.getTFunArgs();
+						//var p = el.map(v -> compileExpressionToString(v)).join(",");
+						var p=fill_args(el,expected_args);
 						var gen = params.length > 0 ? "[" + params.map(v -> proper_name(v)).join(",") + "]" : "";
 						if (c.get().name.startsWith("map[")){
 							return c.get().name+proper_name(params[0])+'{}';
 						}
-						c.get().name + '_new$gen($p)';
+						c.get().name + '_new$gen(${p.join(",")})';
 					};
 				case TLocal(v): {
 						return switch v.t {
@@ -716,6 +712,30 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			return '/* failed to compile $type $as_text $ex ${ex.stack}*/';
 		}
 	}
+	function fill_args(el:Array<TypedExpr>, expected_args_array:Array<{name:String, opt:Bool, t:Type}>) {
+		
+		var expected_args = expected_args_array.map(a -> proper_name(a.t));
+
+		var i = 0;
+
+		var args = el.map(a -> {
+			var v = compileExpressionToString(a, false);
+			var needed_type = expected_args[i++];
+			var value_type = proper_name(a.t);
+			return convert_to_needed_type(compileExpressionToString(a, false), needed_type, value_type);
+		});
+
+		var index=args.length;
+
+		if (expected_args.length>args.length){
+			for (i in index...expected_args.length){
+				//todo this is not good, we need to get the actual default value
+				expected_args_array[i].opt?args.push(convert_to_needed_type("nil",proper_name(expected_args_array[i].t),null)):"";
+			}
+		}
+		return args;
+	}
+	
 	function compileStringWithArgs(arg:TypedExprOrString, that:Null<TypedExpr>, el:Array<TypedExpr>) {
 		var funcname = if (arg.isExpression()){
 			var funcname=compileExpressionToString(arg.getExpression(), false);
