@@ -89,7 +89,8 @@ function format(full_text) {
 		if (errs.length>0){
 			trace(full_text);
 			trace(errs);
-			return full_text;
+			//return null;
+			return "/*"+full_text+"*/";
 		}
 		return real.toString();
 }
