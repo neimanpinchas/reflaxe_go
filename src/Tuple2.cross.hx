@@ -3,7 +3,10 @@ import gostd.NonPtr;
 
 class Tuple2<@:nonptr T1,@:nonptr T2> {
     #if !macro
-    public function new(){}
+    public function new(?_a,?_b){
+        a=_a;
+        b=_b;
+    }
     public var a:T1;
     public var b:T2;
     public static function multi_return<T1,T2>(_a:T1,_b:T2):Tuple2<T1,T2>{
