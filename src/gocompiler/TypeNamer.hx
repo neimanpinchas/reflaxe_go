@@ -31,6 +31,7 @@ public static function proper_name(type:Type, use_pointer:UsePointer = Neutral, 
                         case {name: "Int"}: "int";
                         case {name: "Float"}: "float64";
                         case {name: "String"}: "string";
+                        case {name: "Exception"}: "error";
                         case {name: "Null", params: p}: "/*?*/" + proper_name(params[0], use_pointer); // todo maybe just return nil bool
                         case {name: "Ptr", params: p}: "*" + proper_name(params[0], use_pointer); // todo maybe just return nil bool
                         case {name: "Chan", params: p}: "chan " + proper_name(params[0]);
@@ -149,12 +150,28 @@ public static function proper_name(type:Type, use_pointer:UsePointer = Neutral, 
 
 }
 
+function ptr_by_name(n:String) {
+    switch (n){
+        case "error","string":{
+            return "";
+        }
+        case _:
+    }
+    if (n.startsWith("T")){
+        return "";
+    } else {
+        return "*";
+    }
+}
+
 function type_param_to_string(tin:haxe.macro.Type) {
     return switch tin{
         case TInst(tinn, params):
             var n=tinn.toString().split(".");
             //remove all path in generic parameters
-            return n[n.length-1];
+            var name=n[n.length-1];
+            var ptr=ptr_by_name(name);
+            return ptr+name;
         case _:"N";
     }
 }
