@@ -1,4 +1,5 @@
 package gocompiler;
+import reflaxe.data.TypedExprOrString;
 import gocompiler.AST.Enum;
 import gocompiler.AST.Func;
 import gocompiler.AST.SimpleVarInfo;
@@ -8,8 +9,8 @@ import gocompiler.Util.is_multi_return;
 import gocompiler.TypeNamer.proper_name;
 import haxe.Json;
 import sys.io.File;
-import reflaxe.helpers.NullableMetaAccessHelper;
-import reflaxe.helpers.NameMetaHelper;
+using reflaxe.helpers.NullableMetaAccessHelper;
+using reflaxe.helpers.NameMetaHelper;
 import gocompiler.Types.UsePointer;
 import haxe.macro.TypedExprTools;
 using StringTools;
@@ -242,11 +243,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			} else {
 				out.funcs.push(func);
 			}
-			
-
 
 			//return out;
-
 		};
 
 		var fields_str = fields.join("\n");
@@ -400,13 +398,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						return "go " + funcname + "()";
 					}
 					if (fname.endsWith("__go__")) {
-						var funcname = compileExpressionToString(el[0], false);
-						for (i in 0...el.length+1){
-							funcname=funcname.replace('{$i}',compileExpressionToString(el[1+i]));
-						}
-						funcname=funcname.replace('\\"','"');
-						funcname=funcname.replace('\\n','\n');
-						return funcname.substr(1).substr(0,-1);
+						return compileStringWithArgs(el[0],null,el);
+						
 					}
 
 					var expected_args_array = switch (e.t) {
@@ -571,8 +564,15 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 								};
 						}
 					};
-				// todo if there is parameters
+				// todo make custum new such as for exception
 				case TNew(c, params, el): {
+						var constructor=c.get().constructor.get();
+						if (constructor!=null  && constructor.hasMeta(":custom")){
+							var s=constructor.getNameOrMeta(":custom");
+							trace(el);
+							return compileStringWithArgs(s,null,[null].concat(el));
+						}
+						//trace(c.get().name,c.get().fields.get());
 						var p = el.map(v -> compileExpressionToString(v)).join(",");
 						var gen = params.length > 0 ? "[" + params.map(v -> proper_name(v)).join(",") + "]" : "";
 						if (c.get().name.startsWith("map[")){
@@ -683,11 +683,11 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 							} catch (ex) {
 								'/*' + Std.string(tfunc.args) + '*/';
 							}
-							trace("compiled args");
+							//trace("compiled args");
 							var type = proper_name(tfunc.t);
-							trace('compiled type $type');
+							//trace('compiled type $type');
 							var body = compileExpressionToString(tfunc.expr);
-							trace('compiled body $type');
+							//trace('compiled body $type');
 							'/*TFunction*/func($args)$type{
 						$body
 					}';
@@ -716,6 +716,22 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			return '/* failed to compile $type $as_text $ex ${ex.stack}*/';
 		}
 	}
+	function compileStringWithArgs(arg:TypedExprOrString, that:Null<TypedExpr>, el:Array<TypedExpr>) {
+		var funcname = if (arg.isExpression()){
+			var funcname=compileExpressionToString(arg.getExpression(), false);
+			funcname=funcname.replace('\\"','"');
+					funcname=funcname.replace('\\n','\n');
+					funcname.substr(1).substr(0,-1);
+		}		else {
+			arg.getString() ?? "t_new";
+		}	
+					funcname=funcname.replace('{this}',compileExpressionToString(that));
+					for (i in 0...el.length+1){
+						funcname=funcname.replace('{$i}',compileExpressionToString(el[1+i]));
+					}
+					return funcname;
+	}
+	
 
 	function gen_string(arr:Array<TypeParameter>) {
 		return try if (arr!=null && arr.length>0){
