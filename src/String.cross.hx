@@ -28,7 +28,9 @@ extern class String {
 	function toLowerCase():String;
 	function charAt(index:Int):String;
 	function charCodeAt(index:Int):Null<Int>;
-	function indexOf(str:String, ?startIndex:Int):Int;
+	inline function indexOf(str:String, ?startIndex:Int):Int {
+		return untyped __go__("strings.Index({0},{1})",this,str);
+	};
 	inline function lastIndexOf(str:String, ?startIndex:Int):Int{
 		//TODO position param
 		return untyped __go__("strings.LastIndex({0},{1})",this,str);
