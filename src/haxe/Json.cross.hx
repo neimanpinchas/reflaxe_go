@@ -5,7 +5,7 @@ class Json<T> {
         return gostd.Json.Parse(s);
     }
     
-    public static function stringify(s:Dynamic):String {
+    public static function stringify<T>(s:T):String {
         return gostd.Json.Stringify(s);
     }
 }
