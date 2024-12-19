@@ -3,6 +3,7 @@ package;
 import gostd.GoMath;
 
 @:goimport("math")
+@:goimport("math/rand")
 class Math {
     public static var NEGATIVE_INFINITY:Float=12344;
     public static var POSITIVE_INFINITY:Float=12344;
