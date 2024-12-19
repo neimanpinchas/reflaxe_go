@@ -23,8 +23,7 @@ function get_define(n:String):Null<String>{
 }
 #if (macro || go_runtime)
 var pkg = get_define("pkg") ?? "haxe_out";
-var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
-
+var goimports="";
 /**
 	Used to generate Golang class source code from your intermediate data.
 **/
