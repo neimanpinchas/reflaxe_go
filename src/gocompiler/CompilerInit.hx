@@ -45,7 +45,7 @@ class CompilerInit {
 	}
 
 	static function buildGoImporter() {
-		if (true || haxe.macro.Context.definedValue("goimports") == null) {
+		if (haxe.macro.Context.definedValue("goimports") == null) {
 			final cmd = "go install golang.org/x/tools/cmd/goimports@latest";
 			Sys.println(cmd);
 			if (Sys.command(cmd) == 0) {
