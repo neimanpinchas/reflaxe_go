@@ -57,6 +57,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - [ ] Implement full sys.net
 - [ ] Implement full sys.db
 - [ ] Implement full sys
+- [ ] Unit tests
 
 ## Minor Bugs
 - [ ] `smartDCE` Removes the Timer Class Even When Used
