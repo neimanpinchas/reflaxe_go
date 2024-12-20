@@ -60,7 +60,16 @@ function generateClass(c:AST.Class):Null<String> {
 	var super_str = "";
 	var inj = "";
 
+	var imports = if (c.imports.length > 0) {
+		'import (\n' +
+		c.imports.map(imp -> '"$imp"').join("\n") +
+		')\n';
+	}else{
+		"";
+	}
+
 	var full_text = 'package $pkg\n
+			$imports
 			$static_vars_str
 	$static_fields_str \n type ${c.class_name}$generics struct{$super_str $fields_str}\n $methods
 	 $inj'
