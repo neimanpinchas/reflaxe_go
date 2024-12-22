@@ -50,7 +50,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 ### Syntax support
 - [ ] Full Reflection Support (Record-Macros and Typed JSON)
 - [ ] Support context aware expression generation https://github.com/SomeRanDev/reflaxe/issues/28
-- [ ] Support Enums Reusing Same Parameter Name with Other Types (most common issue so far)
+- [ ] Support Enums Reusing Same Parameter Name with Other Types [(most common issue so far)](https://github.com/neimanpinchas/reflaxe_go/issues/4)
 ### Std
 - [ ] Implement enough for go_imports to work with go2hx (https://github.com/go2hx/go2hx)
 - [ ] Implement full non sys std
