@@ -94,7 +94,7 @@ Offer early commercial users the ability to advance the roadmap by contributing 
 ### We are grateful to the following people for their contributions:
 ---
 ### Gold Contributors
-Joey (PXShadow)
+Joey (PXShadow) https://github.com/PXshadow
 - https://github.com/neimanpinchas/reflaxe_go/pull/1
 - https://github.com/neimanpinchas/reflaxe_go/pull/2
 - https://github.com/neimanpinchas/reflaxe_go/pull/3
