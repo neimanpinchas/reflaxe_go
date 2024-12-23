@@ -47,16 +47,28 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - Supporting Multi-Return Like Lua
 
 ## Roadmap
+### Syntax support
 - [ ] Full Reflection Support (Record-Macros and Typed JSON)
-- [ ] Full Port of Networking Library
-- [ ] Support Enums Reusing Same Parameter Name with Other Types
-- [ ] Make Easier to Use (Update Documentation, Automatic Installation of `go_imports`, Automatic Main Creation, Use Defines for Package Name)
-- [ ] Build a Beginner-Friendly Website for Golang Experts
+- [ ] Support context aware expression generation https://github.com/SomeRanDev/reflaxe/issues/28
+- [ ] Support Enums Reusing Same Parameter Name with Other Types [(most common issue so far)](https://github.com/neimanpinchas/reflaxe_go/issues/4)
+### Std
+- [ ] Implement enough for go_imports to work with go2hx (https://github.com/go2hx/go2hx)
 - [ ] Implement full non sys std
-- [ ] Implement full full sys.io.Fil and sys.FileSystem
+- [ ] Implement full full sys.io.File and sys.FileSystem
 - [ ] Implement full sys.net
 - [ ] Implement full sys.db
 - [ ] Implement full sys
+### Correctness
+- [ ] Unit tests
+- [ ] Document usage
+- [ ] Document metas
+- [ ] Document defines
+### Beginner friendly
+- [ ] Automatic `go_imports` installation
+- [ ] Automatic `main.go` creation
+- [ ] Build a Beginner-Friendly Website for Golang Experts
+- [ ] go extern creator.
+- [ ] naive go class translator.
 
 ## Minor Bugs
 - [ ] `smartDCE` Removes the Timer Class Even When Used
@@ -77,3 +89,18 @@ Offer early commercial users the ability to advance the roadmap by contributing 
 - [Reflaxe Project](https://github.com/RobertBorghese/reflaxe)
 - Pinchas Neiman (Go Target)
 - Great Commentors in prototype project https://github.com/neimanpinchas/haxego/issues/3
+
+## Contributors
+### We are grateful to the following people for their contributions:
+---
+### Gold Contributors
+Joey (PXShadow) https://github.com/PXshadow
+- https://github.com/neimanpinchas/reflaxe_go/pull/1
+- https://github.com/neimanpinchas/reflaxe_go/pull/2
+- https://github.com/neimanpinchas/reflaxe_go/pull/3
+
+#### Silver Contributors
+[Your Name Here]
+
+##### Bronze Contributors
+[Your Name Here]
