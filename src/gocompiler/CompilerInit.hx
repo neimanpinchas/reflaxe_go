@@ -19,6 +19,7 @@ class CompilerInit {
 		buildGoImporter();
 		if (Generator.goimports == "")
 			Generator.goimports = haxe.macro.Context.definedValue("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
+
 		ReflectCompiler.AddCompiler(new Compiler(), {
 			expressionPreprocessors: [
 				SanitizeEverythingIsExpression({}),

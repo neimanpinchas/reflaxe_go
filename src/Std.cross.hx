@@ -5,6 +5,7 @@ import haxe.Int64;
 import gostd.Lang.GoError;
 import gostd.Lang.Duet;
 import go.Syntax;
+import go.Syntax;
 
 @:goimport("math/rand")
 @:goimport("strconv")
@@ -46,7 +47,7 @@ class Std {
         }
     }
     public static inline function random(max:Int) {
-        return untyped __go__("rand.Intn({0})",max);
+        return untyped __go__("rand.New(rand.NewSource(7)).Int31n(int32({0}))",max);
     }
     public static function is(v:Dynamic,t:Dynamic):Bool {
         return false;

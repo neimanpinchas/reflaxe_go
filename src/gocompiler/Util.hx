@@ -3,6 +3,13 @@ package gocompiler;
 import haxe.macro.Type;
 
 class Util {
+	public static function fix_public(n:String,p) {
+		return if (p){
+			n.charAt(0).toUpperCase()+n.substr(1);
+		} else {
+			n;
+		}
+	}
 	public static function anon_name(fields) {
 		return fields.map(f -> {
 			return if (f.name.length <= 4) {

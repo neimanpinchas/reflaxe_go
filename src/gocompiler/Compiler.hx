@@ -200,6 +200,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 				trace(f.field);
 			}
 			out.n=f.field.name;
+			out.p=f.field.isPublic;
 			out.t=force_prt_on_recursive + proper_name(f.field.type, UsePointer.Neutral, f.field.params);
 			return out;
 		});

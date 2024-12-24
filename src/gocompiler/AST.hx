@@ -4,7 +4,8 @@ package gocompiler;
 
 typedef SimpleVarInfo ={
 	n:String,t:String,i:Expr,
-	?has_init:Bool
+	?has_init:Bool,
+	?p:Bool,
 }
 
 /**

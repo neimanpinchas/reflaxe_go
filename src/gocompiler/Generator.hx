@@ -23,7 +23,8 @@ function get_define(n:String):Null<String>{
 }
 #if (macro || go_runtime)
 var pkg = get_define("pkg") ?? "haxe_out";
-var goimports="";
+var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
+
 /**
 	Used to generate Golang class source code from your intermediate data.
 **/
@@ -35,7 +36,7 @@ function generateClass(c:AST.Class):Null<String> {
 			trace("Skipping null field");
 			return "//null\n";
 		}
-		return f.n + " " + force_prt_on_recursive + f.t;
+		return Util.fix_public(f.n,f.p) + " " + force_prt_on_recursive + f.t;
 	}).join("\n");
 	var static_vars_str = c.static_vars.map(f -> {
 		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + switch f.i{
