@@ -9,9 +9,7 @@ import gostd.Lang.LangSyntax;
 extern class Array<T> {
 	var length(default, null):Int;
 
-	function new():Void{
-		[];
-	};
+	function new():Void;
 	function concat(a:Array<T>):Array<T>;
 	inline function join(sep:String):String{
 		return {

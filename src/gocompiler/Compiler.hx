@@ -159,7 +159,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			}\n';
 			inj += code_injections.array().join("\n");
 		}
-		var static_fields = [];
+		var static_fields = new Array<SimpleVarInfo>();
 		var initializers = [];
 		var class_init=compileExpression(classType.init);
 		var fields = varFields.map(f -> {
@@ -452,7 +452,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 									} else if (cl.get().name == "Array" && cf.get().name == "length") {
 										'len(${compileExpressionToString(e)})';
 									} else {
-										compileExpressionToString(e) + "." + cf.get().name;
+										var f=cf.get();
+										compileExpressionToString(e) + "." + Util.fix_public(f.name,(!f.isMethodKind()) && f.isPublic);
 									}
 								}
 							case FStatic(c, cf): {
