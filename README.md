@@ -3,7 +3,7 @@
 A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.com/RobertBorghese/reflaxe).
 
 ## Alternative Name
-- **Go-sharp**: Once mature enough and easier to write than ancient Golang.
+- **Go-sharp**: Once mature enough and easier to write than ancient Golang. (likely already eaiser but incomplete)
 
 ## Why Target GoLang?
 - Great Performance vs. GC Balance
