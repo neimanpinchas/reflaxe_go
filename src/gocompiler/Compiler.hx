@@ -220,7 +220,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					// 	// t.get().name+"_"+a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
 					// 	a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
 					case _:
-						{n:a.name,t:proper_name(a.type, UsePointer.Neutral)};
+						{n:a.getName(),t:proper_name(a.type, UsePointer.Neutral)};
 				}
 			});
 			func.p=args;
@@ -355,14 +355,14 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		return switch (expr.expr) {
 			//these are not currently used but the one below in the string compiler
 			// Here's a very basic example of converting `untyped __go__("something")` into source code...
+			case TCall({expr: TIdent("__go__")}, [{expr: TConst(TString(s))}]): {
+				trace("compiling",s);
+				return StringInject(s);
+			}
 			case TCall({expr: TIdent("__go__")},el):{
 				trace("compiling __go__");
 				return StringInject(compileExpressionToString(el[0],true));
 			}
-				case TCall({expr: TIdent("__go__")}, [{expr: TConst(TString(s))}]): {
-				trace("compiling",s);
-					return StringInject(s);
-				}
 
 			case _: StringInject(compileExpressionToString(expr));
 		}

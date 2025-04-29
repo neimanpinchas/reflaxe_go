@@ -6,9 +6,9 @@ import gocompiler.Util.anon_name;
 import haxe.macro.Type;
 using StringTools;
 class TypeNamer {
-	public static var pkg:String;
+	public static var pkg:String="";
 	public static var classes=new Array();
-    public static var current:BaseType=null;
+    public static var current:Null<BaseType>=null;
     
 	public static var anon_types = new Map<String, Bool>();
 

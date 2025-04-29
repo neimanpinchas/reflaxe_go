@@ -1,6 +1,6 @@
 package gocompiler;
 
-#if (macro || go_runtime)
+//#if (macro || go_runtime)
 
 typedef SimpleVarInfo ={
 	n:String,t:String,i:Expr,
@@ -53,4 +53,4 @@ enum Expr {
 	StringInject(code: String);
 }
 
-#end
+//#end
