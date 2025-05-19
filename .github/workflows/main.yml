@@ -26,7 +26,7 @@ jobs:
       - name: go mod init
         run: go mod init reflaxe_go
       - name: goimporter
-        run: go build golang.org/x/tools/cmd/goimports
+        run: go get golang.org/x/tools/cmd/goimports && go build golang.org/x/tools/cmd/goimports
       - name: run test
         run: cd test && haxe --run TestRunner ./tests
       
