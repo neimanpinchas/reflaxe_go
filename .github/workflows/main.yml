@@ -22,7 +22,7 @@ jobs:
       - name: dev library
         run: haxelib dev reflaxe_go .
       - name: install reflaxe
-        run: haxelib git reflaxe https://github.com/SomeRanDev/reflaxe#b8ece497a10f22e4e4bdcab735a637b1e8e419f4
+        run: haxelib git reflaxe https://github.com/SomeRanDev/reflaxe b8ece497a10f22e4e4bdcab735a637b1e8e419f4
       - name: cd test
         run: cd test
       - name: run test
