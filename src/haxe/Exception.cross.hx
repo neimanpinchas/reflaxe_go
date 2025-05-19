@@ -13,7 +13,20 @@ extern class Exception {
     inline function toString(){
         return untyped __go__("string({0})",this);
     }
-    //public var 
+    public var message(get,never):String;
+    inline function get_message():String{
+        return toString();
+    }
+    #if false
+    public var stack(get,never):CallStack=null;
+    inline function get_stack(){
+        return null;
+    }
+    public var previous(get,never):Exception;
+    inline function get_previous(){
+        return this;
+    }
+    #end
 }
 
 @:native("errors")

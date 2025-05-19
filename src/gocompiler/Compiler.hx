@@ -1,4 +1,5 @@
 package gocompiler;
+import gocompiler.Generator.generateExpression;
 import reflaxe.data.TypedExprOrString;
 import gocompiler.AST.Enum;
 import gocompiler.AST.Func;
@@ -32,6 +33,7 @@ import reflaxe.output.DataAndFileInfo;
 import reflaxe.output.StringOrBytes;
 
 using Lambda;
+using StringTools;
 
 var code_injections = new Map<String, String>();
 var imports = new Map<String, Bool>();
@@ -152,8 +154,9 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 
 		var main = compileExpressionImpl(getMainExpr(), false);
 
-		if (true){//main.startsWith(class_name + "_")) {
-			out.main="main todo";//main;
+		var main_str=generateExpression(main);
+		if (main_str.startsWith(class_name + "_")) {
+			out.main=main_str;//main;
 			code_injections["main"] = '\nfunc main(){
 				$main
 			}\n';
@@ -396,7 +399,17 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					}
 				case TBlock(el):
 					// return el.map(l->compileExpressionImpl(l,false)).join("\n");
-					el.map(l -> l != null ? compileExpressionToString(l) : '0/*l was null???*/').join("\n");
+					return el.map(l -> {
+						if (l==null){
+							return '0/*l was null???*/';
+						}
+						var expr_str=compileExpressionToString(l);
+						if (l.expr.match(TLocal(_))){
+							return "// skipping useless expression TLocal:"+ expr_str;
+						}
+						return expr_str;
+						
+					}).join("\n");
 
 				case TCall(e, el):
 					var fname = compileExpressionToString(e);

@@ -1,5 +1,6 @@
 package gocompiler;
 
+import sys.io.File;
 import haxe.macro.Compiler;
 import haxe.macro.Context;
 import sys.io.Process;
@@ -29,6 +30,21 @@ var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/test
 	Used to generate Golang class source code from your intermediate data.
 **/
 function generateClass(c:AST.Class):Null<String> {
+	if (c.main!=null && c.main.trim().length>0){
+		trace("generating main");
+		File.saveContent("main.go",'
+package main
+
+import (
+	"./$pkg"
+)
+
+func main() {
+	haxe_out.${c.main}
+}
+
+		');
+	}
 	trace(c.class_name);
 	var force_prt_on_recursive = ""; // TODO no idea what this is for
 	var fields_str = c.vars.map(f -> {

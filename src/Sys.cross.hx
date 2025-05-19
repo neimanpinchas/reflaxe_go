@@ -9,6 +9,9 @@ class Sys {
     public static function println(values) {
         Syntax.code('fmt.Println(values)');
     }
+    public static function print(values) {
+        Syntax.code('fmt.Print(values)');
+    }
     public static function time():Float {
         return Date.now().getTime();
     }

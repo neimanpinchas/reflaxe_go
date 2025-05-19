@@ -1,3 +1,5 @@
 --main TestRunner
---neko run_tests.n
+#--neko run_tests.n
+#--hl run_tests.hl
+--python main.py
 

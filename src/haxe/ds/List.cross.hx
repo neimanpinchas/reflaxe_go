@@ -11,4 +11,7 @@ abstract List<T>(Array<T>){
     public function first() {
         return this[0];
     }
+    public function iterator(){
+        return this.iterator();
+    }
 }

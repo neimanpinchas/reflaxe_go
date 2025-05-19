@@ -35,6 +35,9 @@ class Math {
     public static function max(a,b):Float {
         return GoMath.Max(a,b);
     }
+    public static inline function abs(a:Float):Int {
+        return Std.int(a>0?a:0-a);
+    }
     public static function random():Float {
         return untyped __go__("rand.Float64()");
     }
