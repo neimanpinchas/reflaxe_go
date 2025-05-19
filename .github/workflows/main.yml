@@ -16,9 +16,9 @@ jobs:
         with:
           submodules: recursive
       - uses: actions/setup-go@v3
-      - uses: krdlab/setup-haxe@v1.5.1
+      - uses: krdlab/setup-haxe@v1
         with:
-          haxe-version: 4.3.0
+          haxe-version: latest
       - name: haxelib setup
         run: haxelib setup /usr/local/lib/haxe/lib/
       - name: dev library
