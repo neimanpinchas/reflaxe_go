@@ -63,8 +63,8 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - [ ] Document metas
 - [ ] Document defines
 ### Beginner friendly
-- [ ] Automatic `go_imports` installation
-- [ ] Automatic `main.go` creation
+- [x] Automatic `go_imports` installation
+- [x] Automatic `main.go` creation
 - [ ] Build a Beginner-Friendly Website for Golang Experts
 - [ ] go extern creator.
 - [ ] naive go class translator.
