@@ -92,7 +92,7 @@ class TestRunner {
 		Sys.println("-------------------------------------------------------------------");
 		var hasFailResult = false;
 		for (result in results) {
-			if (result.success) {
+			if (!result.success) {
 				hasFailResult = true;
 			}
 			var status = result.success ? "Pass" : "Fail";
