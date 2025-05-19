@@ -1,0 +1,28 @@
+name: build
+
+on: [push,pull_request]
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/setup-go@v3
+      - uses: krdlab/setup-haxe@v1.5.1
+        with:
+          haxe-version: 4.3.0
+      - name: haxelib setup
+        run: haxelib setup /usr/local/lib/haxe/lib/
+      - name: install reflaxe
+        run: haxelib git reflaxe https://github.com/SomeRanDev/reflaxe#b8ece497a10f22e4e4bdcab735a637b1e8e419f4
+      - name: cd test
+        run: cd test
+      - name: run test
+        run: haxe --run TestRunner ./tests
+      
+      
