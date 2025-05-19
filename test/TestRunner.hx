@@ -48,6 +48,8 @@ class TestRunner {
 		var args = [
 			"-main",
 			"tests." + baseName,
+			"-D", 
+			"goimports=../goimports",
 			"-D",
 			"go_output=haxe_out",
 			"-L",
