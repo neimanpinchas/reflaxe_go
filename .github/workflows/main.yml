@@ -12,12 +12,17 @@ jobs:
       fail-fast: false
     runs-on: [ubuntu-latest]
     steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
       - uses: actions/setup-go@v3
       - uses: krdlab/setup-haxe@v1.5.1
         with:
           haxe-version: 4.3.0
       - name: haxelib setup
         run: haxelib setup /usr/local/lib/haxe/lib/
+      - name: dev library
+        run: haxelib dev reflaxe_go .
       - name: install reflaxe
         run: haxelib git reflaxe https://github.com/SomeRanDev/reflaxe#b8ece497a10f22e4e4bdcab735a637b1e8e419f4
       - name: cd test
