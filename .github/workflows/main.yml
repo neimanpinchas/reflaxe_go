@@ -19,8 +19,6 @@ jobs:
       - uses: krdlab/setup-haxe@v1
         with:
           haxe-version: latest
-      - name: haxelib setup
-        run: haxelib setup /usr/local/lib/haxe/lib/
       - name: dev library
         run: haxelib dev reflaxe_go .
       - name: install reflaxe
