@@ -90,13 +90,18 @@ class TestRunner {
 		Sys.println("-------------------------------------------------------------------");
 		Sys.println("| File Name | Status | Message                                    |");
 		Sys.println("-------------------------------------------------------------------");
-
+		var hasFailResult = false;
 		for (result in results) {
+			if (result.success) {
+				hasFailResult = true;
+			}
 			var status = result.success ? "Pass" : "Fail";
 			Sys.println('| ${result.fileName.rpad(" ", 9)} | ${status.rpad(" ", 6)} | ${result.message.rpad(" ", 45)} |');
 		}
-
 		Sys.println("-------------------------------------------------------------------");
+		if (hasFailResult) {
+			Sys.exit(1); // signal to CI that this is a failed exit
+		}
 	}
 }
 
