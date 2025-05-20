@@ -44,20 +44,21 @@ class TestRunner {
 
 	private static function runTest(baseName:String, hxFile:String, txtFile:String):TestResult {
 		// Compile the Haxe file
-		var cmd = "C:/HaxeToolkit/haxe/haxe.exe";
+		var cmd = "haxe";
 		var args = [
 			"-main",
 			"tests." + baseName,
+			"-D", 
+			"goimports=../goimports",
 			"-D",
 			"go_output=haxe_out",
 			"-L",
-			"reflaxe_go_inter",
+			"reflaxe_go",
 		];
 		var compileProcess = new Process(cmd, args);
-
+		var compileResult = compileProcess.exitCode(true);
 		compileProcess.stdout.readAll();
 		// compileProcess.stderr.close();
-		var compileResult = compileProcess.exitCode();
 		// compileProcess.close();
 
 		if (compileResult != 0 && compileResult!=2) {
@@ -65,10 +66,12 @@ class TestRunner {
 		}
 
 		trace("Compilation succeeded");
-
+		Sys.putEnv("GO111MODULE", "off");
 		// Run the compiled program
 		var runProcess = new Process("go", ["run","main.go"]);
-		var output = runProcess.stdout.readAll().toString();
+		runProcess.exitCode(true);
+		var output = runProcess.stdout.readAll().toString() + runProcess.stderr.readAll().toString();
+		trace(output);
         if (output==""){
             return new TestResult(baseName, false, "go output was empty, likely some error is GO111MODULE off?");
         }
@@ -89,13 +92,18 @@ class TestRunner {
 		Sys.println("-------------------------------------------------------------------");
 		Sys.println("| File Name | Status | Message                                    |");
 		Sys.println("-------------------------------------------------------------------");
-
+		var hasFailResult = false;
 		for (result in results) {
+			if (!result.success) {
+				hasFailResult = true;
+			}
 			var status = result.success ? "Pass" : "Fail";
 			Sys.println('| ${result.fileName.rpad(" ", 9)} | ${status.rpad(" ", 6)} | ${result.message.rpad(" ", 45)} |');
 		}
-
 		Sys.println("-------------------------------------------------------------------");
+		if (hasFailResult) {
+			Sys.exit(1); // signal to CI that this is a failed exit
+		}
 	}
 }
 

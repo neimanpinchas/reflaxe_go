@@ -1,0 +1,33 @@
+name: build
+
+on: [push,pull_request]
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - uses: actions/setup-go@v3
+      - uses: krdlab/setup-haxe@v1
+        with:
+          haxe-version: latest
+      - name: dev library
+        run: haxelib dev reflaxe_go .
+      - name: install reflaxe
+        run: haxelib git reflaxe https://github.com/SomeRanDev/reflaxe b8ece497a10f22e4e4bdcab735a637b1e8e419f4
+      - name: go mod init
+        run: go mod init reflaxe_go
+      - name: goimporter
+        run: go get golang.org/x/tools/cmd/goimports && go build golang.org/x/tools/cmd/goimports
+      - name: run test
+        run: cd test && haxe --run TestRunner ./tests
+      
+      
