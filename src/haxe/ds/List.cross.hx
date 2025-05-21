@@ -1,5 +1,6 @@
 package haxe.ds;
 
+@:generics("T")
 @:forward
 abstract List<T>(Array<T>){
     public function new() {
