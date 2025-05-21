@@ -16,6 +16,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - Go Routines (Supports Haxe's Sync Nature)
 - High-Speed Web Frameworks
 - Real Readable Output
+- More (https://github.com/neimanpinchas/reflaxe_go/blob/main/MOTIVATION.md)
 
 ## How to Use
 1. Ensure go 1.20 is installed (1.18 for generics, 1.20 for random generator)

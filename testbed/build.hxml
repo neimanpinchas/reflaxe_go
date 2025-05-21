@@ -1,0 +1,7 @@
+-main Main
+-cp testbed
+-lib reflaxe_go
+-D goimports=./goimports
+-D go-output=haxe_out
+-D pkg=haxe_out
+--cmd GO111MODULE=off go run .
