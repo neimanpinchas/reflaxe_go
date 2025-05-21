@@ -25,8 +25,8 @@ extern class Array<T> {
 	};
 	inline function push(x:T):Int{
 		untyped __go__("{0}=append({0},{1})",this,x);
-		var l;
-		return l= this.length;
+		//var l;
+		return this.length;
 	};
 	function reverse():Void;
     //@:nativeFunctionCode("{this}[{arg0}")
