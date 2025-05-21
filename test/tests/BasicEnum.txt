@@ -1,0 +1,1 @@
+tests/BasicEnum.hx:20: 1

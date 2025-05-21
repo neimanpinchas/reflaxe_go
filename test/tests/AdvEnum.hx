@@ -1,3 +1,6 @@
+package tests;
+
+
 enum TestEnum {
     One(a:Int);
     Two(a:Float);

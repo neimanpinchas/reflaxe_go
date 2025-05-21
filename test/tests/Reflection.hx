@@ -1,3 +1,6 @@
+package tests;
+
+
 function main() {
     var a:Dynamic={};
     Reflect.setField(a,"aaa",1);
