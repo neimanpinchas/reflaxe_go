@@ -83,13 +83,19 @@ class TypeNamer {
 						var out = new AST.Class();
 						var f = a.get().fields.map(f -> {
 							out.vars.push({n: Util.fix_reserved(f.name), t: proper_name(f.type), i: null});
-							if (f.params.length > 1) {}
+							if (f.params.length > 0) {
+                                for (p in f.params){
+                                    
+                                    generics[p.name]=true;
+                                }
+                            }
 						}).join("\n");
 						var has_non_func = a.get().fields.filter(v -> switch (v.type) {
 							case TFun(args, ret): false;
 							case _: true;
 						});
 						var name = anon_name(a.get().fields);
+                        out.generics=[for (v in generics.keys()) v];
 						out.class_name = name;
 						//         var text = if (has_non_func.length>0) '
 						//         package $pkg

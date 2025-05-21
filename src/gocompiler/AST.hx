@@ -21,6 +21,7 @@ class Class {
 	public var static_funcs=new Array<Func>();
 	public var generics=new Array<String>();
 	public var main="";
+	public var full_info="";
 	public var initializers(default, null)=new Array<SimpleVarInfo>();
 	public var isInterface(default, null)=false;
 	public function new() {

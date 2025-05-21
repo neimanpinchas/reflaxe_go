@@ -42,6 +42,14 @@ typedef CompilerConfig = {
 	class_blacklist:Array<String>
 }
 
+/*
+To fix smartdce is dead
+public override function filterTypes(moduleTypes: Array<ModuleType>): Array<ModuleType> {
+    final tracker = new reflaxe.input.ModuleUsageTracker(moduleTypes, this);
+    return tracker.filteredTypes(this.options.customStdMeta);
+}
+*/
+
 /**
 	The class used to compile the Haxe AST into your target language's code.
 
@@ -148,7 +156,16 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			return true;
 		});
 
-		out.generics=classType.params.map(p -> p.name);
+		var manual_generics = NullableMetaAccessHelper.extractStringFromAllMeta(classType.meta, ":generics") ?? [];
+		switch classType.kind {
+			case KAbstractImpl(a):
+				manual_generics=manual_generics.concat(a.get().params.map(v->v.name));
+			case s:{}
+		}
+		out.full_info=Std.string(classType);
+
+		out.generics=classType.params.map(p -> p.name).concat(manual_generics);
+		
 
 
 
@@ -213,7 +230,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		for (f in funcFields){
 		//out.funcs = funcFields.map(function(f):Func {
 			var func:Func=cast {};
-			func.g=out.generics;
+			func.g=f.field.params.map(v->v.name);
 			func.n=f.field.name;
 			//switch 
 			func.b=compileExpressionImpl(f.expr,true);
@@ -399,7 +416,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					}
 				case TBlock(el):
 					// return el.map(l->compileExpressionImpl(l,false)).join("\n");
-					return el.map(l -> {
+					return "{\n"+el.map(l -> {
 						if (l==null){
 							return '0/*l was null???*/';
 						}
@@ -409,7 +426,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						}
 						return expr_str;
 						
-					}).join("\n");
+					}).join("\n")+"\n}";
 
 				case TCall(e, el):
 					var fname = compileExpressionToString(e);
@@ -524,8 +541,18 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 								case _:false;
 							}
 						}
+
+						function type_isinterface(t:Type){
+							return switch t {
+								case TInst(t, params):t.get().isInterface;
+								case _:false;
+							}
+						}
+
+						//interface parameters do not need pointer
+						var no_ptr=type_has_meta(expr.t,":valueType") || type_isinterface(expr.t);
+						var ptr=no_ptr ? "" :"&";
 						
-						var ptr=type_has_meta(expr.t,":valueType") ? "" :"&";
 						return ptr + proper_name(expr.t, Never) + '{${fs.join(",\n")}}';
 					}
 				case TArray(e1, e2): switch e1.t {

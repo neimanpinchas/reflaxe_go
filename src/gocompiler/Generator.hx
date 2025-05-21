@@ -1,5 +1,7 @@
 package gocompiler;
 
+import haxe.io.Bytes;
+import haxe.crypto.Base64;
 import sys.io.File;
 import haxe.macro.Compiler;
 import haxe.macro.Context;
@@ -11,28 +13,29 @@ import haxe.macro.Compiler as HaxeCompiler;
 #end
 import gocompiler.TypeNamer.proper_name;
 import gocompiler.Types.UsePointer;
-using StringTools;
 
+using StringTools;
 using Lambda;
 
-function get_define(n:String):Null<String>{
-#if macro
+function get_define(n:String):Null<String> {
+	#if macro
 	return Context.definedValue(n);
-#else 
-	return "";//Compiler.getDefine(n);
-#end
+	#else
+	return ""; // Compiler.getDefine(n);
+	#end
 }
+
 #if (macro || go_runtime)
 var pkg = get_define("pkg") ?? "haxe_out";
-var goimports=get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
+var goimports = get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
 
 /**
 	Used to generate Golang class source code from your intermediate data.
 **/
 function generateClass(c:AST.Class):Null<String> {
-	if (c.main!=null && c.main.trim().length>0){
+	if (c.main != null && c.main.trim().length > 0) {
 		trace("generating main");
-		File.saveContent("main.go",'
+		File.saveContent("main.go", '
 package main
 
 import (
@@ -52,13 +55,13 @@ func main() {
 			trace("Skipping null field");
 			return "//null\n";
 		}
-		return Util.fix_public(f.n,f.p) + " " + force_prt_on_recursive + f.t;
+		return Util.fix_public(f.n, f.p) + " " + force_prt_on_recursive + f.t;
 	}).join("\n");
 	var static_vars_str = c.static_vars.map(f -> {
-		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + switch f.i{
-			case Nothing:"//noinit";
-			case StringInject(code):code;
-			case _:"//noinit";
+		return 'var ${c.class_name}_' + f.n + " " + f.t + (f.has_init ? " = " + switch f.i {
+			case Nothing: "//noinit";
+			case StringInject(code): code;
+			case _: "//noinit";
 		} : "");
 	}).join("\n");
 	// initializers.push("_inst." + f.field.name + "=" + init);
@@ -77,15 +80,15 @@ func main() {
 	var inj = "";
 
 	var imports = if (c.imports.length > 0) {
-		'import (\n' +
-		c.imports.map(imp -> '"$imp"').join("\n") +
-		')\n';
-	}else{
+		'import (\n' + c.imports.map(imp -> '"$imp"').join("\n") + ')\n';
+	} else {
 		"";
 	}
+	var full_info_base64=Base64.encode(Bytes.ofString(c.full_info));
 
 	var full_text = 'package $pkg\n
 			$imports
+		//	$full_info_base64
 			$static_vars_str
 	$static_fields_str \n type ${c.class_name}$generics struct{$super_str $fields_str}\n $methods
 	 $inj'
@@ -106,44 +109,57 @@ func main() {
 		} else {
 			'';
 		};
-		return format(full_text);
+	return format(full_text);
 }
 
 function format(full_text) {
-	var p=new Process(goimports);
-		p.stdin.writeString(full_text);
-		p.stdin.close();
-		var real=p.stdout.readAll();
-		var errs=p.stderr.readAll().toString();
-		if (errs.length>0){
-			trace(full_text);
-			trace(errs);
-			//return null;
-			return "/*"+full_text+"*/";
-		}
-		return real.toString();
+	var p = new Process(goimports);
+	p.stdin.writeString(full_text);
+	p.stdin.close();
+	var real = p.stdout.readAll();
+	var errs = p.stderr.readAll().toString();
+	if (errs.length > 0) {
+		trace(full_text);
+		trace(errs);
+		// return null;
+		return "/*" + full_text + "*/";
+	}
+	return real.toString();
+}
+
+function array_uniq(a:Array<String>):Array<String> {
+	var uniq = new Map<String, Bool>();
+	for (v in a)
+		uniq.set(v, null);
+	return {iterator: () -> uniq.keys()}.array();
 }
 
 function generateMethod(c:AST.Class, f:Func, isStatic) {
 	var class_name = c.class_name;
 	var ret_type = f.r;
 	var ret = ret_type.length > 0 ? "(out " + ret_type + ")" : "";
-
-	var has_generics = c.generics.length > 0;
+	// var total_generics=array_uniq([].concat(f.g).concat(c.generics));
+	var total_generics = f.g.length > 0 ? f.g : c.generics;
+	var has_generics = total_generics.length > 0;
 	var has_receiver = if (isStatic || f.n.endsWith("new") || has_generics) false else true;
 	var first_param_this = !has_receiver && (!isStatic && has_generics) && f.n != "new";
-	var generics_use = c.generics.length > 0 ? "[" + c.generics.join(",") + "]" : "";
+	var generics_use = total_generics.length > 0 ? "[" + total_generics.join(",") + "]" : "";
 	var thisvar = {n: "_inst", t: '* $class_name$generics_use'};
 	if (first_param_this) {
 		// f.p.unshift(thisvar);
 		f.p.unshift(thisvar);
 	}
-	var local_generics = if (!has_receiver && c.generics.length > 0) {
-		"[" + c.generics.map(v -> v + " any").join(",") + "]";
+	var local_generics = if (!has_receiver && total_generics.length > 0) {
+		"[" + total_generics.map(v -> v + " any").join(",") + "]";
 	} else {
 		"";
 	}
-	var hdr = if (!has_receiver) 'func ${class_name}_${f.n}$local_generics' else 'func (${thisvar.n + " " + thisvar.t})${f.n}';
+	var gendesc = '
+		//has_generics $has_generics
+		//has_receiver $has_receiver
+		//first_param_this $first_param_this
+	';
+	var hdr = if (!has_receiver) '$gendesc\nfunc ${class_name}_${f.n}$local_generics' else 'func (${thisvar.n + " " + thisvar.t})${f.n}';
 	var body = if (f.n == "new") {
 		'
 		${"_inst:=&"+class_name+'$generics_use{}'}
