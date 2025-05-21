@@ -16,6 +16,7 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - Go Routines (Supports Haxe's Sync Nature)
 - High-Speed Web Frameworks
 - Real Readable Output
+- Null Safety https://haxe.org/manual/cr-null-safety.html#:~:text=Enabling%20Null%20Safety,package%22)%20initialization%20macro.
 - More (https://github.com/neimanpinchas/reflaxe_go/blob/main/MOTIVATION.md)
 
 ## How to Use
@@ -69,9 +70,6 @@ A compiler that compiles Haxe code into Golang using [Reflaxe](https://github.co
 - [ ] Build a Beginner-Friendly Website for Golang Experts
 - [ ] go extern creator.
 - [ ] naive go class translator.
-
-## Minor Bugs
-- [ ] `smartDCE` Removes the Timer Class Even When Used
 
 ## License
 CC-BY-NC-ND
