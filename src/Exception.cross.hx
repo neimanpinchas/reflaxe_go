@@ -3,9 +3,12 @@ package;
 @:native("error")
 extern class Exception {
     inline function toString(){
-        return untyped __go__("string({0})",this);
+        return Fmt.Sprint(this);
     }
-    //public var 
+    public var stack(get,never):String;
+    inline function get_stack() {
+        return gostd.Debug.Stack().toString();
+    }
 }
 
 @:native("errors")

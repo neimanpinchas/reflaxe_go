@@ -1,5 +1,7 @@
 package haxe;
 
+import gostd.Debug;
+
 @:native("error")
 extern class Exception {
     @:custom("errors.New({0})")
@@ -17,11 +19,11 @@ extern class Exception {
     inline function get_message():String{
         return toString();
     }
-    #if false
-    public var stack(get,never):CallStack=null;
+    public var stack(get,never):String;
     inline function get_stack(){
-        return null;
+        return Debug.Stack().toString();
     }
+    #if false
     public var previous(get,never):Exception;
     inline function get_previous(){
         return this;
