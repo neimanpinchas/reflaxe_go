@@ -1,3 +1,5 @@
 *.n
 temp
 test/haxe_out/*
+test/main.go
+test/test.exe
