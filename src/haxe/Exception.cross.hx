@@ -11,7 +11,7 @@ extern class Exception {
     }
         */
     inline function toString(){
-        return untyped __go__("string({0})",this);
+        return Fmt.Sprint(this);
     }
     public var message(get,never):String;
     inline function get_message():String{
