@@ -165,7 +165,7 @@ function format(full_text) {
 	}
 	var output=real.toString();
 	new_cache.gofmt[full_text]=output;
-	trace(new_cache.gofmt.keys().length,"keys");
+	//trace(new_cache.gofmt.keys().length,"keys");
 	return output;
 }
 
