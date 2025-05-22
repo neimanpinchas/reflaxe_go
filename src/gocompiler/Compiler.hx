@@ -1,4 +1,6 @@
 package gocompiler;
+
+import haxe.DynamicAccess;
 import gocompiler.Generator.generateExpression;
 import reflaxe.data.TypedExprOrString;
 import gocompiler.AST.Enum;
@@ -10,15 +12,17 @@ import gocompiler.Util.is_multi_return;
 import gocompiler.TypeNamer.proper_name;
 import haxe.Json;
 import sys.io.File;
+
 using reflaxe.helpers.NullableMetaAccessHelper;
 using reflaxe.helpers.NameMetaHelper;
+
 import gocompiler.Types.UsePointer;
 import haxe.macro.TypedExprTools;
+
 using StringTools;
 using reflaxe.helpers.TypedExprHelper;
 using reflaxe.helpers.ClassFieldHelper;
 using reflaxe.helpers.TypeHelper;
-
 
 // Make sure this code only exists at compile-time.
 #if (macro || go_runtime)
@@ -37,19 +41,20 @@ using StringTools;
 
 var code_injections = new Map<String, String>();
 var imports = new Map<String, Bool>();
-var pkg='haxe_out';
+var pkg = 'haxe_out';
+
 typedef CompilerConfig = {
-	class_blacklist:Array<String>
+	class_blacklist:Array<String>,
+	corrections:DynamicAccess<String>,
 }
 
 /*
-To fix smartdce is dead
-public override function filterTypes(moduleTypes: Array<ModuleType>): Array<ModuleType> {
-    final tracker = new reflaxe.input.ModuleUsageTracker(moduleTypes, this);
-    return tracker.filteredTypes(this.options.customStdMeta);
-}
-*/
-
+	To fix smartdce is dead
+	public override function filterTypes(moduleTypes: Array<ModuleType>): Array<ModuleType> {
+	final tracker = new reflaxe.input.ModuleUsageTracker(moduleTypes, this);
+	return tracker.filteredTypes(this.options.customStdMeta);
+	}
+ */
 /**
 	The class used to compile the Haxe AST into your target language's code.
 
@@ -63,15 +68,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 
 		https://api.haxe.org/haxe/macro/ClassType.html
 	**/
-	public var config:CompilerConfig = try {
-		trace(Sys.getCwd());
-		Json.parse(File.getContent("./compiler_config.json"));
-	} catch (ex) {
-		trace(ex);
-		{
-			class_blacklist: []
-		};
-	};
+	public var config:CompilerConfig = gocompiler.Generator.config;
 
 	public override function onCompileStart() {
 		config.class_blacklist.push("PosException");
@@ -92,19 +89,18 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		var final_st1 = convert_to_needed_type(st1, t2, t1);
 		var final_st2 = convert_to_needed_type(st2, t1, t2);
 
-		var hack_unused=if (op=="="){
+		var hack_unused = if (op == "=") {
 			'\n_=$final_st1';
 		} else {
 			'';
 		}
 
 		// todo check for oposite
-		return '$final_st1$op$final_st2'+'$hack_unused';
+		return '$final_st1$op$final_st2' + '$hack_unused';
 	}
 
-
 	public override function onCompileEnd() {
-		for (c in TypeNamer.classes){
+		for (c in TypeNamer.classes) {
 			classes.push(c);
 		}
 		// for (c in classes){
@@ -113,21 +109,21 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		// 	}
 		// }
 		/*
-		classes.unshift(new DataAndFileInfo('package $pkg
-		import(
-			${{iterator:()->imports.keys()}.map(v->' "$v" ').join("\n")}
-		)
-		', current_class, null, null));
-		*/
+			classes.unshift(new DataAndFileInfo('package $pkg
+			import(
+				${{iterator:()->imports.keys()}.map(v->' "$v" ').join("\n")}
+			)
+			', current_class, null, null));
+		 */
 	}
 
 	public function compileClassImpl(classType:ClassType, varFields:Array<ClassVarData>, funcFields:Array<ClassFuncData>):Null<AST.Class> {
 		// code_injections=[];
-		var out= new AST.Class();
-		
+		var out = new AST.Class();
+
 		var current_class = classType;
 		TypeNamer.current = classType;
-		//TypeNamer.pkg = pkg;
+		// TypeNamer.pkg = pkg;
 
 		if (classType.isExtern) {
 			return null;
@@ -139,7 +135,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		}
 
 		// TODO: implement
-		out.class_name=classType.name;
+		out.class_name = classType.name;
 		var class_name = classType.name;
 		// trace(class_name);
 		var inj = "";
@@ -159,21 +155,19 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		var manual_generics = NullableMetaAccessHelper.extractStringFromAllMeta(classType.meta, ":generics") ?? [];
 		switch classType.kind {
 			case KAbstractImpl(a):
-				manual_generics=manual_generics.concat(a.get().params.map(v->v.name));
-			case s:{}
+				manual_generics = manual_generics.concat(a.get().params.map(v -> v.name));
+			case s:
+				{}
 		}
-		out.full_info=Std.string(classType);
+		out.full_info = Std.string(classType);
 
-		out.generics=classType.params.map(p -> p.name).concat(manual_generics);
-		
-
-
+		out.generics = classType.params.map(p -> p.name).concat(manual_generics);
 
 		var main = compileExpressionImpl(getMainExpr(), false);
 
-		var main_str=generateExpression(main);
+		var main_str = generateExpression(main);
 		if (main_str.startsWith(class_name + "_")) {
-			out.main=main_str;//main;
+			out.main = main_str; // main;
 			code_injections["main"] = '\nfunc main(){
 				$main
 			}\n';
@@ -181,7 +175,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		}
 		var static_fields = new Array<SimpleVarInfo>();
 		var initializers = [];
-		var class_init=compileExpression(classType.init);
+		var class_init = compileExpression(classType.init);
 		var fields = varFields.map(f -> {
 			var ftname = proper_name(f.field.type);
 			var force_prt_on_recursive = if (ftname == class_name) {
@@ -203,7 +197,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			} catch (ex) {
 				StringInject("//" + ex.toString());
 			}
-			var out:SimpleVarInfo=cast {};
+			var out:SimpleVarInfo = cast {};
 			if (f.isStatic) {
 				static_fields.push({
 					n: f.field.name,
@@ -213,62 +207,59 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 				});
 				return null;
 			} else if (has_init) {
-				out.i=init;
-
+				out.i = init;
 			}
 			if (f.field.name == "cache") {
 				trace(f.field);
 			}
-			out.n=f.field.name;
-			out.p=f.field.isPublic;
-			out.t=force_prt_on_recursive + proper_name(f.field.type, UsePointer.Neutral, f.field.params);
+			out.n = f.field.name;
+			out.p = f.field.isPublic;
+			out.t = force_prt_on_recursive + proper_name(f.field.type, UsePointer.Neutral, f.field.params);
 			return out;
 		});
 
-		out.vars=fields;
-		out.static_vars=static_fields;
-		for (f in funcFields){
-		//out.funcs = funcFields.map(function(f):Func {
-			var func:Func=cast {};
-			func.g=f.field.params.map(v->v.name);
-			func.n=f.field.name;
-			//switch 
-			func.b=compileExpressionImpl(f.expr,true);
+		out.vars = fields;
+		out.static_vars = static_fields;
+		for (f in funcFields) {
+			// out.funcs = funcFields.map(function(f):Func {
+			var func:Func = cast {};
+			func.g = f.field.params.map(v -> v.name);
+			func.n = f.field.name;
+			// switch
+			func.b = compileExpressionImpl(f.expr, true);
 			var args = f.args.map(a -> {
 				return switch a.type {
 					// case TEnum(t, params):
 					// 	// t.get().name+"_"+a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
 					// 	a.name + ' ' + proper_name(a.type, UsePointer.Neutral);
 					case _:
-						{n:a.getName(),t:proper_name(a.type, UsePointer.Neutral)};
+						{n: a.getName(), t: proper_name(a.type, UsePointer.Neutral)};
 				}
 			});
-			func.p=args;
+			func.p = args;
 			var ret_type = proper_name(f.ret, Neutral);
-			func.r=ret_type;
-			var ret=ret_type;
+			func.r = ret_type;
+			var ret = ret_type;
 
 			if (f.kind.match(MethDynamic) && !f.isStatic) {
 				// todo setup initializer
-				var arg_str=args.map(v->v.t).join(",");
-				var init=StringInject('_inst.${f.field.name}=func(${arg_str}){
+				var arg_str = args.map(v -> v.t).join(",");
+				var init = StringInject('_inst.${f.field.name}=func(${arg_str}){
 					${compileExpressionImpl(f.expr, false)}
 				}');
-				fields.push({n:f.field.name ,t: " func(" + arg_str + ")",i:init});
+				fields.push({n: f.field.name, t: " func(" + arg_str + ")", i: init});
 				initializers.push(init);
 				continue;
 				// "//" + f.field.name + " is dynamic \n ";
 			}
 
-			if (f.isStatic){
+			if (f.isStatic) {
 				out.static_funcs.push(func);
 			} else {
 				out.funcs.push(func);
 			}
 
-			
-
-			//return out;
+			// return out;
 		};
 
 		out.static_funcs.push({
@@ -276,13 +267,12 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			g: [],
 			b: class_init,
 			r: "",
-			p:[],
+			p: [],
 		});
 
 		var fields_str = fields.join("\n");
 
 		var super_str = classType.superClass != null ? "super " + (classType.superClass.t.get().name) + "\n" : "";
-		trace("finished",class_name, goimports);
 		return out;
 	}
 
@@ -297,7 +287,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		var simple = constructs.filter(v -> v.args.length == 0);
 		var simple_count = simple.length;
 		var multies = constructs.filter(v -> v.args.length > 0);
-		var gen=enumType.params.length>0?"["+enumType.params.map(v->v.name+" any").join(",")+"]":"";
+		var gen = enumType.params.length > 0 ? "[" + enumType.params.map(v -> v.name + " any").join(",") + "]" : "";
 		// var body='package $pkg\n
 		var fields = new Map<String, String>();
 		var multi_str = multies.mapi((i, c) -> {
@@ -306,7 +296,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 				return v.name + " " + proper_name(v.type);
 			};
 			var args = c.args.map(mapf).join(",");
-			//var gen=c.field.params.map(v->v.name).join(",");
+			// var gen=c.field.params.map(v->v.name).join(",");
 			return 'func ${name}_${c.name}$gen($args) ${name}_obj {
 			var _e=${name}_obj{}
 			_e.__hxindex=${i + simple_count}
@@ -350,11 +340,10 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			__hxindex int
 		}
 		';
-		var out=new Enum();
-		out.body=body;
+		var out = new Enum();
+		out.body = body;
 		return out;
 	}
-
 
 	/**
 		This is the final required function.
@@ -369,33 +358,31 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		https://api.haxe.org/haxe/macro/TypedExpr.html
 	**/
 	public function compileExpressionImpl(expr:TypedExpr, topLevel:Bool):Null<AST.Expr> {
-		if (expr==null){
+		if (expr == null) {
 			return StringInject("/* expr was null */");
 		}
 		return switch (expr.expr) {
-			//these are not currently used but the one below in the string compiler
+			// these are not currently used but the one below in the string compiler
 			// Here's a very basic example of converting `untyped __go__("something")` into source code...
 			case TCall({expr: TIdent("__go__")}, [{expr: TConst(TString(s))}]): {
-				trace("compiling",s);
-				return StringInject(s);
-			}
-			case TCall({expr: TIdent("__go__")},el):{
-				trace("compiling __go__");
-				return StringInject(compileExpressionToString(el[0],true));
-			}
+					trace("compiling", s);
+					return StringInject(s);
+				}
+			case TCall({expr: TIdent("__go__")}, el): {
+					trace("compiling __go__");
+					return StringInject(compileExpressionToString(el[0], true));
+				}
 
 			case _: StringInject(compileExpressionToString(expr));
 		}
 	}
 
-	
-
-	public function compileExpressionToString(expr:TypedExpr,nothing=false):Null<String> {
+	public function compileExpressionToString(expr:TypedExpr, nothing = false):Null<String> {
 		if (expr == null) {
 			return "";
 		}
 		return try {
-			 //'/*${expr.expr.getName()}*/'+switch expr.expr {
+			// '/*${expr.expr.getName()}*/'+switch expr.expr {
 			switch expr.expr {
 				case TEnumIndex(e1): compileExpressionToString(e1) + ".Index()";
 				case TIdent(s): {
@@ -416,17 +403,16 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					}
 				case TBlock(el):
 					// return el.map(l->compileExpressionImpl(l,false)).join("\n");
-					return "{\n"+el.map(l -> {
-						if (l==null){
+					return "{\n" + el.map(l -> {
+						if (l == null) {
 							return '0/*l was null???*/';
 						}
-						var expr_str=compileExpressionToString(l);
-						if (l.expr.match(TLocal(_))){
-							return "// skipping useless expression TLocal:"+ expr_str;
+						var expr_str = compileExpressionToString(l);
+						if (l.expr.match(TLocal(_))) {
+							return "// skipping useless expression TLocal:" + expr_str;
 						}
 						return expr_str;
-						
-					}).join("\n")+"\n}";
+					}).join("\n") + "\n}";
 
 				case TCall(e, el):
 					var fname = compileExpressionToString(e);
@@ -440,8 +426,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						return "go " + funcname + "()";
 					}
 					if (fname.endsWith("__go__")) {
-						return compileStringWithArgs(el[0],null,el);
-						
+						return compileStringWithArgs(el[0], null, el);
 					}
 
 					var expected_args_array = switch (e.t) {
@@ -449,8 +434,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						case _: [];
 					}
 
-					var args=fill_args(el,expected_args_array);
-
+					var args = fill_args(el, expected_args_array);
 
 					switch e.expr {
 						case TField(e2, fa): {
@@ -464,16 +448,10 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						case _:
 					}
 
+					var gen = e?.getFunctionTypeParams()?.map(v -> try proper_name(v, Neutral) catch (ex) '/*$ex*/interface{}');
+					var gen_string = gen != null && gen.length > 0 ? "[" + gen.join(",") + "]" : "";
 
-					var gen=e?.getFunctionTypeParams()?.map(v->try proper_name(v,Neutral) catch(ex) '/*$ex*/interface{}');
-					var gen_string=gen!=null && gen.length>0 ? "["+gen.join(",")+"]":"";
-					
-					
-
-
-					
-
-					fname + gen_string+ "(" + args.join(",") + ")";
+					fname + gen_string + "(" + args.join(",") + ")";
 				case TField(e, fa): {
 						return switch fa {
 							case FInstance(cl, par, cf): {
@@ -482,8 +460,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 									} else if (cl.get().name == "Array" && cf.get().name == "length") {
 										'len(${compileExpressionToString(e)})';
 									} else {
-										var f=cf.get();
-										compileExpressionToString(e) + "." + Util.fix_public(f.name,(!f.isMethodKind()) && f.isPublic);
+										var f = cf.get();
+										compileExpressionToString(e) + "." + Util.fix_public(f.name, (!f.isMethodKind()) && f.isPublic);
 									}
 								}
 							case FStatic(c, cf): {
@@ -534,34 +512,34 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 				case TMeta(m, e1): "/*" + m.name + " meta */" + compileExpressionToString(e1);
 				case TObjectDecl(fields): {
 						var fs = fields.map(f -> f.name + ':' + compileExpressionToString(f.expr, false));
-						function type_has_meta(t:Type,meta){
+						function type_has_meta(t:Type, meta) {
 							return switch t {
-								case TInst(t, params):t.get().meta.has(meta);
-								case TAbstract(t, params):t.get().meta.has(meta);
-								case _:false;
+								case TInst(t, params): t.get().meta.has(meta);
+								case TAbstract(t, params): t.get().meta.has(meta);
+								case _: false;
 							}
 						}
 
-						function type_isinterface(t:Type){
+						function type_isinterface(t:Type) {
 							return switch t {
-								case TInst(t, params):t.get().isInterface;
-								case _:false;
+								case TInst(t, params): t.get().isInterface;
+								case _: false;
 							}
 						}
 
-						//interface parameters do not need pointer
-						var no_ptr=type_has_meta(expr.t,":valueType") || type_isinterface(expr.t);
-						var ptr=no_ptr ? "" :"&";
-						
+						// interface parameters do not need pointer
+						var no_ptr = type_has_meta(expr.t, ":valueType") || type_isinterface(expr.t);
+						var ptr = no_ptr ? "" : "&";
+
 						return ptr + proper_name(expr.t, Never) + '{${fs.join(",\n")}}';
 					}
 				case TArray(e1, e2): switch e1.t {
-					case TDynamic(t):{
-						compileExpressionToString(e1) + '.([]interface{})[${compileExpressionToString(e2)}]';
+						case TDynamic(t): {
+								compileExpressionToString(e1) + '.([]interface{})[${compileExpressionToString(e2)}]';
+							}
+						case _:
+							compileExpressionToString(e1) + '[' + compileExpressionToString(e2) + ']';
 					}
-					case _:
-					compileExpressionToString(e1) + '[' + compileExpressionToString(e2) + ']';
-				}
 				case TVar(v, rval): {
 						var name = Util.fix_reserved(v.name);
 						var discard = if (v.meta.has(":discard_error")) {
@@ -569,30 +547,30 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						} else {
 							"";
 						}
-						//var not_new=["_inst","out"];
-						var not_new=["out"];
-						var smiley=not_new.indexOf(name)>-1?"=":":=";
+						// var not_new=["_inst","out"];
+						var not_new = ["out"];
+						var smiley = not_new.indexOf(name) > -1 ? "=" : ":=";
 						var imr = is_multi_return(v.t);
 						if (imr.length > 0) {
 							return imr.map(f -> name + "_" + f).join(",") + smiley + compileExpressionToString(rval);
 						}
-						var thetype=proper_name(v.t, UsePointer.Neutral);
-						var gen=gen_string(v.extra!=null?v.extra.params:[]);
+						var thetype = proper_name(v.t, UsePointer.Neutral);
+						var gen = gen_string(v.extra != null ? v.extra.params : []);
 						switch (v.t) {
-							case TEnum(t, params): "/*type*/" + if (rval != null){
-								//t.get()?.name + "_" + name + ":=" + compileExpressionToString(rval);
-								name + smiley + compileExpressionToString(rval);
-							} else {
-								'var ${name} $thetype$gen';
-							}
+							case TEnum(t, params): "/*type*/" + if (rval != null) {
+									// t.get()?.name + "_" + name + ":=" + compileExpressionToString(rval);
+									name + smiley + compileExpressionToString(rval);
+								} else {
+									'var ${name} $thetype$gen';
+								}
 							case e: {
 									if (rval != null) {
 										var cmpexpr = compileExpressionToString(rval);
-										//'var $name $thetype'+
+										// 'var $name $thetype'+
 										if (cmpexpr == "nil") {
 											'';
 										} else {
-											'\n'+name + discard + smiley + cmpexpr+"\n_="+name;
+											'\n' + name + discard + smiley + cmpexpr + "\n_=" + name;
 										}
 									} else {
 										'var ${name}$discard $thetype$gen';
@@ -602,25 +580,25 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					};
 				// todo make custum new such as for exception
 				case TNew(c, params, el): {
-						var constructor=c.get().constructor.get();
-						if (constructor!=null  && constructor.hasMeta(":custom")){
-							var s=constructor.getNameOrMeta(":custom");
+						var constructor = c.get().constructor.get();
+						if (constructor != null && constructor.hasMeta(":custom")) {
+							var s = constructor.getNameOrMeta(":custom");
 							trace(el);
-							return compileStringWithArgs(s,null,[null].concat(el));
+							return compileStringWithArgs(s, null, [null].concat(el));
 						}
-						//trace(c.get().name,c.get().fields.get());
-						var expected_args=constructor.type.getTFunArgs();
-						//var p = el.map(v -> compileExpressionToString(v)).join(",");
-						var p=fill_args(el,expected_args);
+						// trace(c.get().name,c.get().fields.get());
+						var expected_args = constructor.type.getTFunArgs();
+						// var p = el.map(v -> compileExpressionToString(v)).join(",");
+						var p = fill_args(el, expected_args);
 						var gen = params.length > 0 ? "[" + params.map(v -> proper_name(v)).join(",") + "]" : "";
-						if (c.get().name.startsWith("map[")){
-							return c.get().name+proper_name(params[0])+'{}';
+						if (c.get().name.startsWith("map[")) {
+							return c.get().name + proper_name(params[0]) + '{}';
 						}
 						c.get().name + '_new$gen(${p.join(",")})';
 					};
 				case TLocal(v): {
 						return switch v.t {
-							//case TEnum(t, params): return proper_name(v.t, Never) + "_" + v.name;
+							// case TEnum(t, params): return proper_name(v.t, Never) + "_" + v.name;
 							case TEnum(t, params): return v.name;
 							case _: Util.fix_reserved(v.name);
 						}
@@ -640,7 +618,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						case OpAssignOp(op2): switch op2 {
 								case OpAdd: compileExpressionToString(e1) + "=" + compileExpressionToString(e1) + "+" + compileExpressionToString(e2);
 								case OpMult: compileExpressionToString(e1) + "=" + compileExpressionToString(e1) + "*" + compileExpressionToString(e2);
-								case OpDiv: compileExpressionToString(e1) + "=float64(" + compileExpressionToString(e1) + "/" + compileExpressionToString(e2) + ")";
+								case OpDiv: compileExpressionToString(e1) + "=float64(" + compileExpressionToString(e1) + "/"
+									+ compileExpressionToString(e2) + ")";
 								case op3: compileExpressionToString(e1) + op3.getName();
 							}
 						case OpEq: {
@@ -660,7 +639,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 						case OpMod: compileExpressionToString(e1) + "%" + compileExpressionToString(e2);
 						case OpAdd: {
 								if (proper_name(e1.t) == "string") {
-									compile_string_concat(e1,e2);
+									compile_string_concat(e1, e2);
 								} else {
 									compileExpressionToString(e1) + "+" + compileExpressionToString(e2);
 								}
@@ -721,11 +700,11 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 							} catch (ex) {
 								'/*' + Std.string(tfunc.args) + '*/';
 							}
-							//trace("compiled args");
+							// trace("compiled args");
 							var type = proper_name(tfunc.t);
-							//trace('compiled type $type');
+							// trace('compiled type $type');
 							var body = compileExpressionToString(tfunc.expr);
-							//trace('compiled body $type');
+							// trace('compiled body $type');
 							'/*TFunction*/func($args)$type{
 						$body
 					}';
@@ -745,7 +724,7 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 					var t = proper_name(expr.t);
 					// var t=el.length>0?proper_name(el[0].t):"interface{}";
 					'$t{' + el.map(v -> compileExpressionToString(v)).join(",") + '}';
-				 
+
 				case e: '/*' + Std.string(e) + '*/';
 			}
 		} catch (ex) {
@@ -754,8 +733,8 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			return '/* failed to compile $type $as_text $ex ${ex.stack}*/';
 		}
 	}
+
 	function fill_args(el:Array<TypedExpr>, expected_args_array:Array<{name:String, opt:Bool, t:Type}>) {
-		
 		var expected_args = expected_args_array.map(a -> proper_name(a.t));
 
 		var i = 0;
@@ -767,56 +746,54 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			return convert_to_needed_type(compileExpressionToString(a, false), needed_type, value_type);
 		});
 
-		var index=args.length;
+		var index = args.length;
 
-		if (expected_args.length>args.length){
-			for (i in index...expected_args.length){
-				//todo this is not good, we need to get the actual default value
-				expected_args_array[i].opt?args.push(convert_to_needed_type("nil",proper_name(expected_args_array[i].t),null)):"";
+		if (expected_args.length > args.length) {
+			for (i in index...expected_args.length) {
+				// todo this is not good, we need to get the actual default value
+				expected_args_array[i].opt ? args.push(convert_to_needed_type("nil", proper_name(expected_args_array[i].t), null)) : "";
 			}
 		}
 		return args;
 	}
-	
+
 	function compileStringWithArgs(arg:TypedExprOrString, that:Null<TypedExpr>, el:Array<TypedExpr>) {
-		var funcname = if (arg.isExpression()){
-			var funcname=compileExpressionToString(arg.getExpression(), false);
-			funcname=funcname.replace('\\"','"');
-					funcname=funcname.replace('\\n','\n');
-					funcname.substr(1).substr(0,-1);
-		}		else {
+		var funcname = if (arg.isExpression()) {
+			var funcname = compileExpressionToString(arg.getExpression(), false);
+			funcname = funcname.replace('\\"', '"');
+			funcname = funcname.replace('\\n', '\n');
+			funcname.substr(1).substr(0, -1);
+		} else {
 			arg.getString() ?? "t_new";
-		}	
-					funcname=funcname.replace('{this}',compileExpressionToString(that));
-					for (i in 0...el.length+1){
-						funcname=funcname.replace('{$i}',compileExpressionToString(el[1+i]));
-					}
-					return funcname;
+		}
+		funcname = funcname.replace('{this}', compileExpressionToString(that));
+		for (i in 0...el.length + 1) {
+			funcname = funcname.replace('{$i}', compileExpressionToString(el[1 + i]));
+		}
+		return funcname;
 	}
-	
 
 	function gen_string(arr:Array<TypeParameter>) {
-		return try if (arr!=null && arr.length>0){
-			"["+arr.map(v->v.name).join(",")+"]";
+		return try if (arr != null && arr.length > 0) {
+			"[" + arr.map(v -> v.name).join(",") + "]";
 		} else {
 			"";
 		}
 	}
 
 	function e2string_ar(e:TypedExpr):Array<String> {
-		return switch e.expr{
-			case TBinop(op, ie1, ie2):switch op {
-				case OpAdd if (proper_name(ie1.t) == "string"):return [e2string_ar(ie1),e2string_ar(ie2)].flatten();
-				case _:[compileExpressionToString(e)];
-			}
-			case _:[compileExpressionToString(e)];
+		return switch e.expr {
+			case TBinop(op, ie1, ie2): switch op {
+					case OpAdd if (proper_name(ie1.t) == "string"): return [e2string_ar(ie1), e2string_ar(ie2)].flatten();
+					case _: [compileExpressionToString(e)];
+				}
+			case _: [compileExpressionToString(e)];
 		}
 	}
 
 	function compile_string_concat(e1:TypedExpr, e2:TypedExpr) {
-		var parts=[e2string_ar(e1),e2string_ar(e2)].flatten();
+		var parts = [e2string_ar(e1), e2string_ar(e2)].flatten();
 		return 'fmt.Sprint(' + parts.join(",") + ')';
-
 	}
 
 	public function convert_to_needed_type(v, t_to, t_from) {
@@ -828,18 +805,59 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 			}
 		}
 		/*
-		if (t_from=="interface{}"){
-			return v+'.($t_to)';
-		}
-		*/
-		return switch ([v, t_to]) {
+			if (t_from=="interface{}"){
+				return v+'.($t_to)';
+			}
+		 */
+		var prim = switch ([v, t_to]) {
 			case ["nil", "string"]: '""';
 			case ["nil", "int"]: '0';
 			case ["nil", "float64"]: '0';
-			case [_, _]: v;
+			case ["nil", _]: "nil";
+			case [_, _]: null;
 		}
+		if (prim != null) {
+			return prim;
+		}
+		// this would do some auto pointer, but not working good with other rules such as generics
+		// return generatePrefix(t_from,t_to)+v;
+		return v;
 	}
 
+	function countStars(typeString:String):Int {
+		var count = 0;
+		for (i in 0...typeString.length) {
+			if (typeString.charAt(i) == '*') {
+				count++;
+			} else {
+				break; // Stop counting once we encounter a non-star character
+			}
+		}
+		return count;
+	}
+
+	function remove_comments(s:String) {
+		return s.replace("/*", "").replace("*/", "");
+	}
+
+	function generatePrefix(v_from:String, v_to:String):String {
+		var fromStars = countStars(v_from);
+		var toStars = countStars(v_to);
+		var diff = toStars - fromStars;
+		var prefix = '/* ${remove_comments(v_from + " " + v_to)} */';
+
+		if (diff > 0) {
+			for (i in 0...diff - 1) {
+				prefix += "&";
+			}
+		} else if (diff < 0) {
+			for (i in 0...(0 - diff)) {
+				prefix += "*";
+			}
+		}
+
+		return prefix;
+	}
 
 	/**
 		This is used to configure what files are generated.
@@ -852,10 +870,20 @@ class Compiler extends GenericCompiler<AST.Class, AST.Enum, AST.Expr> {
 		```
 	**/
 	public function generateOutputIterator():Iterator<DataAndFileInfo<StringOrBytes>> {
+
 		var index = 0;
 		return {
 			hasNext: function() {
-				return index < (classes.length + enums.length);
+				var b=index < (classes.length + enums.length);
+				if (b==false){
+					trace("Done, saving cache");
+					try {
+						File.saveContent("./compile_cache.json", Json.stringify(gocompiler.Generator.new_cache));
+					} catch (ex) {
+						trace(ex);
+					}
+				}
+				return b;
 			},
 			next: function() {
 				return if (index < classes.length) {
