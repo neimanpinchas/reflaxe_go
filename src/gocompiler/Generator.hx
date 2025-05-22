@@ -13,6 +13,7 @@ import haxe.macro.Compiler as HaxeCompiler;
 #end
 import gocompiler.TypeNamer.proper_name;
 import gocompiler.Types.UsePointer;
+import gocompiler.Compiler.CompilerConfig;
 
 using StringTools;
 using Lambda;
@@ -25,10 +26,32 @@ function get_define(n:String):Null<String> {
 	#end
 }
 
+var config:CompilerConfig = try {
+	trace(Sys.getCwd());
+	Json.parse(File.getContent("./compiler_config.json"));
+} catch (ex) {
+	trace(ex);
+	{
+		class_blacklist: [],
+		corrections:{},
+	};
+};
+
 #if (macro || go_runtime)
 var pkg = get_define("pkg") ?? "haxe_out";
 var goimports = get_define("goimports") ?? "C:/Users/ps/Desktop/haxe_projects/tests/tools/cmd/goimports/goimports.exe";
-
+var cache:Types.CompileCache=try {
+	Json.parse(File.getContent("./compile_cache.json"));
+} catch(ex){
+	var a:Dynamic={};
+	var b:Dynamic={};
+	{gofmt: a,final_code: b}
+};
+var new_cache:Types.CompileCache={
+	var a:Dynamic={};
+	var b:Dynamic={};
+	{gofmt: a,final_code: b}
+};
 /**
 	Used to generate Golang class source code from your intermediate data.
 **/
@@ -48,7 +71,7 @@ func main() {
 
 		');
 	}
-	trace(c.class_name);
+	//trace(c.class_name);
 	var force_prt_on_recursive = ""; // TODO no idea what this is for
 	var fields_str = c.vars.map(f -> {
 		if (f == null) {
@@ -109,10 +132,26 @@ func main() {
 		} else {
 			'';
 		};
+		for (k=>v in config.corrections){
+			full_text=full_text.replace(k,v);
+			try {
+
+				//full_text=new EReg(k,"g").replace(full_text,v);
+			} catch(ex){
+				trace(ex);
+			}
+		}
+		if (!cache.gofmt.exists(full_text)) trace("finished",c.class_name);
 	return format(full_text);
 }
 
 function format(full_text) {
+	if (cache.gofmt.exists(full_text)){
+		//save for next time;
+		new_cache.gofmt[full_text]=cache.gofmt[full_text];
+		
+		return cache.gofmt[full_text];
+	}
 	var p = new Process(goimports);
 	p.stdin.writeString(full_text);
 	p.stdin.close();
@@ -122,9 +161,12 @@ function format(full_text) {
 		trace(full_text);
 		trace(errs);
 		// return null;
-		return "/*" + full_text + "*/";
+		return "//"+(errs + "\n" + full_text).split("\n").join("\n//");
 	}
-	return real.toString();
+	var output=real.toString();
+	new_cache.gofmt[full_text]=output;
+	trace(new_cache.gofmt.keys().length,"keys");
+	return output;
 }
 
 function array_uniq(a:Array<String>):Array<String> {

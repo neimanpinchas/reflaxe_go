@@ -38,7 +38,20 @@ class TypeNamer {
 							// case {meta:m} if (m!=null && m.has(":nonptr")): try proper_name(params[0],Never);
 							case {meta: m} if (use_pointer != Never && m != null && m.has(":valueType")): try proper_name(type, Never);
 							// generics
-							case {name: n, kind: KTypeParameter(constraints)} if (n.length < 3 && n.startsWith("T")): n + '/*$constraints*/';
+							case {name: n, kind: KTypeParameter(constraints)} if (n.length < 3 && n.startsWith("T")): {
+                                if (constraints.length==0){
+                                    n;
+                                } else {
+                                    var t=switch constraints[0] {
+                                        case TAbstract(a,p):switch a.get()?.name {
+                                            case "Constructible":"*"+n+"/* generic with pointer */";
+                                            case a:n+'/* $a */';
+                                        }
+                                        case _:null;
+                                    }
+                                    t ?? (n + '/*$constraints*/');
+                                }
+                            }
 							case {name: n, kind: KTypeParameter(constraints)}: n + '/*$constraints*/';
 							case {name: "Null", params: p}: "/*?*/" + proper_name(params[0], use_pointer); // todo maybe just return nil bool
 							case {name: "Ptr", params: p}: "*" + proper_name(params[0], use_pointer); // todo maybe just return nil bool
@@ -54,7 +67,7 @@ class TypeNamer {
 									"[]" + gentype;
 								}
 							// case _:"/* tinst */"+Std.string(t.get());
-							case {pack: pack, name: name}: {
+							case {pack: pack, name: name,kind:kind}: {
                                     var try_prim=primitives(name);
                                     if (try_prim!=null) return try_prim;
 									if (use_pointer == Never) {
